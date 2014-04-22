@@ -64,7 +64,7 @@ video.
 #define CAM_SHUTTER_SPEED_AUTO OMX_FALSE
 #define CAM_ISO 100 //100 .. 800
 #define CAM_ISO_AUTO OMX_TRUE
-#define CAM_EXPOSURE OMX_ExposureControlOff
+#define CAM_EXPOSURE OMX_ExposureControlAuto
 #define CAM_EXPOSURE_COMPENSATION 0 //-10 .. 10
 #define CAM_MIRROR OMX_MirrorNone
 #define CAM_ROTATION 0.0 //0.0 90.0 180.0 270.0
@@ -74,7 +74,7 @@ video.
 #define CAM_NOISE_REDUCTION OMX_TRUE
 #define CAM_FRAME_STABILIZATION OMX_FALSE
 #define CAM_METERING OMX_MeteringModeAverage
-#define CAM_WHITE_BALANCE OMX_WhiteBalControlOff
+#define CAM_WHITE_BALANCE OMX_WhiteBalControlAuto
 #define CAM_IMAGE_FILTER OMX_ImageFilterNone
 
 /*
@@ -709,10 +709,10 @@ int main (){
   OMX_BUFFERHEADERTYPE* cameraBufferOut;
   COMPONENT camera;
   COMPONENT encoder;
-  COMPONENT sink;
+  COMPONENT nullSink;
   camera.name = "OMX.broadcom.camera";
   encoder.name = "OMX.broadcom.video_encode";
-  sink.name = "OMX.broadcom.null_sink";
+  nullSink.name = "OMX.broadcom.null_sink";
   
   //Open the file
   int fd = open (FILENAME, O_WRONLY | O_CREAT | O_TRUNC | O_APPEND, 0666);
@@ -733,7 +733,7 @@ int main (){
   //Initialize components
   initComponent (&camera);
   initComponent (&encoder);
-  initComponent (&sink);
+  initComponent (&nullSink);
   
   //Initialize camera drivers
   loadCameraDrivers (&camera);
@@ -824,7 +824,7 @@ int main (){
     printf ("ERROR: OMX_SetupTunnel: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
-  if (error = OMX_SetupTunnel (camera.handle, 70, sink.handle, 240)){
+  if (error = OMX_SetupTunnel (camera.handle, 70, nullSink.handle, 240)){
     printf ("ERROR: OMX_SetupTunnel: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
@@ -834,16 +834,16 @@ int main (){
   wait (&camera, EventStateSet, NULL);
   changeState (&encoder, OMX_StateIdle);
   wait (&encoder, EventStateSet, NULL);
-  changeState (&sink, OMX_StateIdle);
-  wait (&sink, EventStateSet, NULL);
+  changeState (&nullSink, OMX_StateIdle);
+  wait (&nullSink, EventStateSet, NULL);
   
   //Enable the ports
   enablePort (&camera, 71);
   wait (&camera, EventPortEnable, NULL);
   enablePort (&camera, 70);
   wait (&camera, EventPortEnable, NULL);
-  enablePort (&sink, 240);
-  wait (&sink, EventPortEnable, NULL);
+  enablePort (&nullSink, 240);
+  wait (&nullSink, EventPortEnable, NULL);
   enablePort (&encoder, 200);
   wait (&encoder, EventPortEnable, NULL);
   enableEncoderOutputPort (&encoder, &encoderBufferOut);
@@ -854,8 +854,8 @@ int main (){
   changeState (&encoder, OMX_StateExecuting);
   wait (&encoder, EventStateSet, NULL);
   wait (&encoder, EventPortSettingsChanged, NULL);
-  changeState (&sink, OMX_StateExecuting);
-  wait (&sink, EventStateSet, NULL);
+  changeState (&nullSink, OMX_StateExecuting);
+  wait (&nullSink, EventStateSet, NULL);
   
   //Enable camera capture port. This basically says that the port 71 will be
   //used to get data from the camera. If you're capturing a still, the port 72
@@ -914,16 +914,16 @@ int main (){
   wait (&camera, EventStateSet, NULL);
   changeState (&encoder, OMX_StateIdle);
   wait (&encoder, EventStateSet, NULL);
-  changeState (&sink, OMX_StateIdle);
-  wait (&sink, EventStateSet, NULL);
+  changeState (&nullSink, OMX_StateIdle);
+  wait (&nullSink, EventStateSet, NULL);
   
   //Disable the tunnel ports
   disablePort (&camera, 71);
   wait (&camera, EventPortDisable, NULL);
   disablePort (&camera, 70);
   wait (&camera, EventPortDisable, NULL);
-  disablePort (&sink, 240);
-  wait (&sink, EventPortDisable, NULL);
+  disablePort (&nullSink, 240);
+  wait (&nullSink, EventPortDisable, NULL);
   disablePort (&encoder, 200);
   wait (&encoder, EventPortDisable, NULL);
   disableEncoderOutputPort (&encoder, encoderBufferOut);
@@ -933,13 +933,13 @@ int main (){
   wait (&camera, EventStateSet, NULL);
   changeState (&encoder, OMX_StateLoaded);
   wait (&encoder, EventStateSet, NULL);
-  changeState (&sink, OMX_StateLoaded);
-  wait (&sink, EventStateSet, NULL);
+  changeState (&nullSink, OMX_StateLoaded);
+  wait (&nullSink, EventStateSet, NULL);
   
   //Deinitialize components
   deinitComponent (&camera);
   deinitComponent (&encoder);
-  deinitComponent (&sink);
+  deinitComponent (&nullSink);
   
   //Deinitialize OpenMAX IL
   if (error = OMX_Deinit ()){
