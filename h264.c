@@ -74,9 +74,9 @@ video.
 #define CAM_NOISE_REDUCTION OMX_TRUE
 #define CAM_FRAME_STABILIZATION OMX_FALSE
 #define CAM_METERING OMX_MeteringModeAverage
-#define CAM_WHITE_BALANCE OMX_WhiteBalControlOff
+#define CAM_WHITE_BALANCE OMX_WhiteBalControlAuto
 //The gains are used if white balance is set to off
-#define CAM_WHITE_BALANCE_RED_GAIN 1.1 //0.001 .. 7.999
+#define CAM_WHITE_BALANCE_RED_GAIN 0.1 //0.001 .. 7.999
 #define CAM_WHITE_BALANCE_BLUE_GAIN 0.1 //0.001 .. 7.999
 #define CAM_IMAGE_FILTER OMX_ImageFilterNone
 
