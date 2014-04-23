@@ -53,7 +53,7 @@ video.
 #define VIDEO_CODEC OMX_VIDEO_CodingAVC //H.264/AVC
 #define VIDEO_IDR_PERIOD 60 //Minimum 2 (1 IDR frame every 1 frame)
 
-//Some settings are not implemented
+//Some settings doesn't work well
 #define CAM_WIDTH 1920
 #define CAM_HEIGHT 1080
 #define CAM_SHARPNESS 0 //-100 .. 100
@@ -74,9 +74,9 @@ video.
 #define CAM_NOISE_REDUCTION OMX_TRUE
 #define CAM_FRAME_STABILIZATION OMX_FALSE
 #define CAM_METERING OMX_MeteringModeAverage
-#define CAM_WHITE_BALANCE OMX_WhiteBalControlAuto
+#define CAM_WHITE_BALANCE OMX_WhiteBalControlOff
 //The gains are used if white balance is set to off
-#define CAM_WHITE_BALANCE_RED_GAIN 0.1 //0.001 .. 7.999
+#define CAM_WHITE_BALANCE_RED_GAIN 1.1 //0.001 .. 7.999
 #define CAM_WHITE_BALANCE_BLUE_GAIN 0.1 //0.001 .. 7.999
 #define CAM_IMAGE_FILTER OMX_ImageFilterNone
 
@@ -612,8 +612,8 @@ void setCameraSettings (COMPONENT* camera){
   if (!CAM_WHITE_BALANCE){
     OMX_CONFIG_CUSTOMAWBGAINSTYPE whiteBalanceGains;
     OMX_INIT_STRUCTURE (whiteBalanceGains);
-    whiteBalanceGains.xGainR = CAM_WHITE_BALANCE_RED_GAIN*65536;
-    whiteBalanceGains.xGainB = CAM_WHITE_BALANCE_BLUE_GAIN*65536;
+    whiteBalanceGains.xGainR = (OMX_U32)(CAM_WHITE_BALANCE_RED_GAIN*65536);
+    whiteBalanceGains.xGainB = (OMX_U32)(CAM_WHITE_BALANCE_BLUE_GAIN*65536);
     if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCustomAwbGains,
         &whiteBalanceGains)){
       printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
