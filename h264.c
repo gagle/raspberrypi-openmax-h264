@@ -5,9 +5,10 @@ Very quick OpenMAX IL explanation:
 
 - There are components. Each component performs an action. For example, the
   OMX.broadcom.camera module captures images and videos and the
-  OMX.broadcom.image_encoder module encodes raw data into multiple formats.
-  Each component has input ports and output and receives and sends buffers with
-  data. The	main goal is to join these components.
+  OMX.broadcom.image_encoder module encodes raw data from an image into multiple
+  formats. Each component has input and output ports and receives and sends
+  buffers with data. The main goal is to join these components to form a
+  pipeline and do complex tasks.
 - There are two ways to connect components: with tunnels or manually. The
   non-tunneled ports need to manually allocate the buffers with
   OMX_AllocateBuffer() and free them with OMX_FreeBuffer().
@@ -17,12 +18,13 @@ Very quick OpenMAX IL explanation:
 - There are two types of functions: blocking and non-blocking. The blocking
   functions are synchronous and the non-blocking are asynchronous. Being
   asynchronous means that the function returns immediately but the result is
-  returned in a later time from a secondary thread using an event. This example
-  uses two non-blocking functions: OMX_SendCommand and OMX_FillThisBuffer.
+  returned in a later time, so you need to wait until you receive an event. This
+  example  ses two non-blocking functions: OMX_SendCommand and
+  OMX_FillThisBuffer.
 
 Note: The camera component has two video ports: "preview" and "video". The
-"preview" port must be tunneled to the null_sink component in order to record a
-video.
+"preview" port must be enabled even if you don't need it (tunnel it to the
+null_sink component).
 */
 
 #include <stdarg.h>
