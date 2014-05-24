@@ -40,20 +40,19 @@ AWB (auto white balance) algorithms.
 
 #include "dump.h"
 
-#define OMX_INIT_STRUCTURE(a) \
-  memset (&(a), 0, sizeof (a)); \
-  (a).nSize = sizeof (a); \
-  (a).nVersion.nVersion = OMX_VERSION; \
-  (a).nVersion.s.nVersionMajor = OMX_VERSION_MAJOR; \
-  (a).nVersion.s.nVersionMinor = OMX_VERSION_MINOR; \
-  (a).nVersion.s.nRevision = OMX_VERSION_REVISION; \
-  (a).nVersion.s.nStep = OMX_VERSION_STEP
+#define OMX_INIT_STRUCTURE(x) \
+  memset (&(x), 0, sizeof (x)); \
+  (x).nSize = sizeof (x); \
+  (x).nVersion.nVersion = OMX_VERSION; \
+  (x).nVersion.s.nVersionMajor = OMX_VERSION_MAJOR; \
+  (x).nVersion.s.nVersionMinor = OMX_VERSION_MINOR; \
+  (x).nVersion.s.nRevision = OMX_VERSION_REVISION; \
+  (x).nVersion.s.nStep = OMX_VERSION_STEP
 
 #define FILENAME "video.h264"
 
 #define VIDEO_FRAMERATE 30
 #define VIDEO_BITRATE 10000000
-#define VIDEO_CODEC OMX_VIDEO_CodingAVC //H.264/AVC
 #define VIDEO_IDR_PERIOD 60 //Minimum 2 (1 IDR frame every 1 frame)
 
 //Some settings doesn't work well
@@ -134,6 +133,7 @@ CAM_METERING
   OMX_MeteringModeAverage
   OMX_MeteringModeSpot
   OMX_MeteringModeMatrix
+  OMX_MeteringModeBacklit
 
 CAM_MIRROR
   OMX_MirrorNone
@@ -164,133 +164,133 @@ typedef struct {
   VCOS_EVENT_FLAGS_T flags;
   //The fullname of the component
   OMX_STRING name;
-} COMPONENT;
+} component_t;
 
 //Events used with vcos_event_flags_get() and vcos_event_flags_set()
 typedef enum {
-  EventError = 0x1,
-  EventPortEnable = 0x2,
-  EventPortDisable = 0x4,
-  EventStateSet = 0x8,
-  EventFlush = 0x10,
-  EventMarkBuffer = 0x20,
-  EventMark = 0x40,
-  EventPortSettingsChanged = 0x80,
-  EventParamOrConfigChanged = 0x100,
-  EventBufferFlag = 0x200,
-  EventResourcesAcquired = 0x400,
-  EventDynamicResourcesAvailable = 0x800,
-  EventFillBufferDone = 0x1000,
-  EventEmptyBufferDone = 0x2000,
-} EVENT;
+  EVENT_ERROR = 0x1,
+  EVENT_PORT_ENABLE = 0x2,
+  EVENT_PORT_DISABLE = 0x4,
+  EVENT_STATE_SET = 0x8,
+  EVENT_FLUSH = 0x10,
+  EVENT_MARK_BUFFER = 0x20,
+  EVENT_MARK = 0x40,
+  EVENT_PORT_SETTINGS_CHANGED = 0x80,
+  EVENT_PARAM_OR_CONFIG_CHANGED = 0x100,
+  EVENT_BUFFER_FLAG = 0x200,
+  EVENT_RESOURCES_ACQUIRED = 0x400,
+  EVENT_DYNAMIC_RESOURCES_AVAILABLE = 0x800,
+  EVENT_FILL_BUFFER_DONE = 0x1000,
+  EVENT_EMPTY_BUFFER_DONE = 0x2000,
+} event_t;
 
 //Prototypes
-OMX_ERRORTYPE EventHandler (
-    OMX_IN OMX_HANDLETYPE hComponent,
-    OMX_IN OMX_PTR pAppData,
-    OMX_IN OMX_EVENTTYPE eEvent,
-    OMX_IN OMX_U32 nData1,
-    OMX_IN OMX_U32 nData2,
-    OMX_IN OMX_PTR pEventData);
-OMX_ERRORTYPE FillBufferDone (
-    OMX_IN OMX_HANDLETYPE hComponent,
-    OMX_IN OMX_PTR pAppData,
-    OMX_IN OMX_BUFFERHEADERTYPE* pBuffer);
-void wake (COMPONENT* component, VCOS_UNSIGNED event);
+OMX_ERRORTYPE event_handler (
+    OMX_IN OMX_HANDLETYPE comp,
+    OMX_IN OMX_PTR app_data,
+    OMX_IN OMX_EVENTTYPE event,
+    OMX_IN OMX_U32 data1,
+    OMX_IN OMX_U32 data2,
+    OMX_IN OMX_PTR event_data);
+OMX_ERRORTYPE fill_buffer_done (
+    OMX_IN OMX_HANDLETYPE comp,
+    OMX_IN OMX_PTR app_data,
+    OMX_IN OMX_BUFFERHEADERTYPE* buffer);
+void wake (component_t* component, VCOS_UNSIGNED event);
 void wait (
-    COMPONENT* component,
+    component_t* component,
     VCOS_UNSIGNED events,
-    VCOS_UNSIGNED* retrievedEvents);
-void initComponent (COMPONENT* component);
-void deinitComponent (COMPONENT* component);
-void loadCameraDrivers (COMPONENT* component);
-void changeState (COMPONENT* component, OMX_STATETYPE state);
-void enablePort (COMPONENT* component, OMX_U32 port);
-void disablePort (COMPONENT* component, OMX_U32 port);
-void enableEncoderOutputPort (
-    COMPONENT* encoder,
-    OMX_BUFFERHEADERTYPE** encoderBufferOut);
-void disableEncoderOutputPort (
-    COMPONENT* encoder,
-    OMX_BUFFERHEADERTYPE* encoderBufferOut);
-void setCameraSettings (COMPONENT* camera);
+    VCOS_UNSIGNED* retrieved_events);
+void init_component (component_t* component);
+void deinit_component (component_t* component);
+void load_camera_drivers (component_t* component);
+void change_state (component_t* component, OMX_STATETYPE state);
+void enable_port (component_t* component, OMX_U32 port);
+void disable_port (component_t* component, OMX_U32 port);
+void enable_encoder_output_port (
+    component_t* encoder,
+    OMX_BUFFERHEADERTYPE** encoder_output_buffer);
+void disable_encoder_output_port (
+    component_t* encoder,
+    OMX_BUFFERHEADERTYPE* encoder_output_buffer);
+void set_camera_settings (component_t* camera);
 
 //Function that is called when a component receives an event from a secondary
 //thread
-OMX_ERRORTYPE EventHandler (
-    OMX_IN OMX_HANDLETYPE hComponent,
-    OMX_IN OMX_PTR pAppData,
-    OMX_IN OMX_EVENTTYPE eEvent,
-    OMX_IN OMX_U32 nData1,
-    OMX_IN OMX_U32 nData2,
-    OMX_IN OMX_PTR pEventData){
-  COMPONENT* component = (COMPONENT*)pAppData;
+OMX_ERRORTYPE event_handler (
+    OMX_IN OMX_HANDLETYPE comp,
+    OMX_IN OMX_PTR app_data,
+    OMX_IN OMX_EVENTTYPE event,
+    OMX_IN OMX_U32 data1,
+    OMX_IN OMX_U32 data2,
+    OMX_IN OMX_PTR event_data){
+  component_t* component = (component_t*)app_data;
   
-  switch (eEvent){
+  switch (event){
     case OMX_EventCmdComplete:
-      switch (nData1){
+      switch (data1){
         case OMX_CommandStateSet:
-          printf ("EVENT: %s, OMX_CommandStateSet, state: %s\n",
-              component->name, dump_OMX_STATETYPE (nData2));
-          wake (component, EventStateSet);
+          printf ("event: %s, OMX_CommandStateSet, state: %s\n",
+              component->name, dump_OMX_STATETYPE (data2));
+          wake (component, EVENT_STATE_SET);
           break;
         case OMX_CommandPortDisable:
-          printf ("EVENT: %s, OMX_CommandPortDisable, port: %d\n",
-              component->name, nData2);
-          wake (component, EventPortDisable);
+          printf ("event: %s, OMX_CommandPortDisable, port: %d\n",
+              component->name, data2);
+          wake (component, EVENT_PORT_DISABLE);
           break;
         case OMX_CommandPortEnable:
-          printf ("EVENT: %s, OMX_CommandPortEnable, port: %d\n",
-              component->name, nData2);
-          wake (component, EventPortEnable);
+          printf ("event: %s, OMX_CommandPortEnable, port: %d\n",
+              component->name, data2);
+          wake (component, EVENT_PORT_ENABLE);
           break;
         case OMX_CommandFlush:
-          printf ("EVENT: %s, OMX_CommandFlush, port: %d\n",
-              component->name, nData2);
-          wake (component, EventFlush);
+          printf ("event: %s, OMX_CommandFlush, port: %d\n",
+              component->name, data2);
+          wake (component, EVENT_FLUSH);
           break;
         case OMX_CommandMarkBuffer:
-          printf ("EVENT: %s, OMX_CommandMarkBuffer, port: %d\n",
-              component->name, nData2);
-          wake (component, EventMarkBuffer);
+          printf ("event: %s, OMX_CommandMarkBuffer, port: %d\n",
+              component->name, data2);
+          wake (component, EVENT_MARK_BUFFER);
           break;
       }
       break;
     case OMX_EventError:
-      printf ("EVENT: %s, %s\n", component->name, dump_OMX_ERRORTYPE (nData1));
-      wake (component, EventError);
+      printf ("event: %s, %s\n", component->name, dump_OMX_ERRORTYPE (data1));
+      wake (component, EVENT_ERROR);
       break;
     case OMX_EventMark:
-      printf ("EVENT: %s, OMX_EventMark\n", component->name);
-      wake (component, EventMark);
+      printf ("event: %s, OMX_EventMark\n", component->name);
+      wake (component, EVENT_MARK);
       break;
     case OMX_EventPortSettingsChanged:
-      printf ("EVENT: %s, OMX_EventPortSettingsChanged, port: %d\n",
-          component->name, nData1);
-      wake (component, EventPortSettingsChanged);
+      printf ("event: %s, OMX_EventPortSettingsChanged, port: %d\n",
+          component->name, data1);
+      wake (component, EVENT_PORT_SETTINGS_CHANGED);
       break;
     case OMX_EventParamOrConfigChanged:
-      printf ("EVENT: %s, OMX_EventParamOrConfigChanged, nData1: %d, nData2: "
-          "%X\n", component->name, nData1, nData2);
-      wake (component, EventParamOrConfigChanged);
+      printf ("event: %s, OMX_EventParamOrConfigChanged, data1: %d, data2: "
+          "%X\n", component->name, data1, data2);
+      wake (component, EVENT_PARAM_OR_CONFIG_CHANGED);
       break;
     case OMX_EventBufferFlag:
-      printf ("EVENT: %s, OMX_EventBufferFlag, port: %d\n",
-          component->name, nData1);
-      wake (component, EventBufferFlag);
+      printf ("event: %s, OMX_EventBufferFlag, port: %d\n",
+          component->name, data1);
+      wake (component, EVENT_BUFFER_FLAG);
       break;
     case OMX_EventResourcesAcquired:
-      printf ("EVENT: %s, OMX_EventResourcesAcquired\n", component->name);
-      wake (component, EventResourcesAcquired);
+      printf ("event: %s, OMX_EventResourcesAcquired\n", component->name);
+      wake (component, EVENT_RESOURCES_ACQUIRED);
       break;
     case OMX_EventDynamicResourcesAvailable:
-      printf ("EVENT: %s, OMX_EventDynamicResourcesAvailable\n",
+      printf ("event: %s, OMX_EventDynamicResourcesAvailable\n",
           component->name);
-      wake (component, EventDynamicResourcesAvailable);
+      wake (component, EVENT_DYNAMIC_RESOURCES_AVAILABLE);
       break;
     default:
       //This should never execute, just ignore
-      printf ("EVENT: %s, Unknown (%X)\n", eEvent);
+      printf ("event: %s, Unknown (%X)\n", event);
       break;
   }
 
@@ -298,60 +298,60 @@ OMX_ERRORTYPE EventHandler (
 }
 
 //Function that is called when a component fills a buffer with data
-OMX_ERRORTYPE FillBufferDone (
-    OMX_IN OMX_HANDLETYPE hComponent,
-    OMX_IN OMX_PTR pAppData,
-    OMX_IN OMX_BUFFERHEADERTYPE* pBuffer){
-  COMPONENT* component = (COMPONENT*)pAppData;
+OMX_ERRORTYPE fill_buffer_done (
+    OMX_IN OMX_HANDLETYPE comp,
+    OMX_IN OMX_PTR app_data,
+    OMX_IN OMX_BUFFERHEADERTYPE* buffer){
+  component_t* component = (component_t*)app_data;
   
-  printf ("EVENT: %s, FillBufferDone\n", component->name);
-  wake (component, EventFillBufferDone);
+  printf ("event: %s, fill_buffer_done\n", component->name);
+  wake (component, EVENT_FILL_BUFFER_DONE);
   
   return OMX_ErrorNone;
 }
 
-void wake (COMPONENT* component, VCOS_UNSIGNED event){
+void wake (component_t* component, VCOS_UNSIGNED event){
   vcos_event_flags_set (&component->flags, event, VCOS_OR);
 }
 
 void wait (
-    COMPONENT* component,
+    component_t* component,
     VCOS_UNSIGNED events,
-    VCOS_UNSIGNED* retrievedEvents){
+    VCOS_UNSIGNED* retrieved_events){
   VCOS_UNSIGNED set;
-  if (vcos_event_flags_get (&component->flags, events | EventError,
+  if (vcos_event_flags_get (&component->flags, events | EVENT_ERROR,
       VCOS_OR_CONSUME, VCOS_SUSPEND, &set)){
-    printf ("ERROR: vcos_event_flags_get\n");
+    printf ("error: vcos_event_flags_get\n");
     exit (1);
   }
-  if (set == EventError){
+  if (set == EVENT_ERROR){
     exit (1);
   }
-  if (retrievedEvents){
-    *retrievedEvents = set;
+  if (retrieved_events){
+    *retrieved_events = set;
   }
 }
 
-void initComponent (COMPONENT* component){
-  printf ("Initializing component %s\n", component->name);
+void init_component (component_t* component){
+  printf ("initializing component %s\n", component->name);
   
   OMX_ERRORTYPE error;
   
   //Create the event flags
   if (vcos_event_flags_create (&component->flags, "component")){
-    printf ("ERROR: vcos_event_flags_create\n");
+    printf ("error: vcos_event_flags_create\n");
     exit (1);
   }
   
-  //Each component has an EventHandler and FillBufferDone functions
-  OMX_CALLBACKTYPE callbacks;
-  callbacks.EventHandler = EventHandler;
-  callbacks.FillBufferDone = FillBufferDone;
+  //Each component has an event_handler and fill_buffer_done functions
+  OMX_CALLBACKTYPE callbacks_st;
+  callbacks_st.EventHandler = event_handler;
+  callbacks_st.FillBufferDone = fill_buffer_done;
   
   //Get the handle
   if (error = OMX_GetHandle (&component->handle, component->name, component,
-      &callbacks)){
-    printf ("ERROR: OMX_GetHandle: %s\n", dump_OMX_ERRORTYPE (error));
+      &callbacks_st)){
+    printf ("error: OMX_GetHandle: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
@@ -362,42 +362,42 @@ void initComponent (COMPONENT* component){
     OMX_IndexParamImageInit,
     OMX_IndexParamOtherInit
   };
-  OMX_PORT_PARAM_TYPE ports;
-  OMX_INIT_STRUCTURE (ports);
+  OMX_PORT_PARAM_TYPE ports_st;
+  OMX_INIT_STRUCTURE (ports_st);
 
   int i;
   for (i=0; i<4; i++){
-    if (error = OMX_GetParameter (component->handle, types[i], &ports)){
-      printf ("ERROR: OMX_GetParameter: %s\n", dump_OMX_ERRORTYPE (error));
+    if (error = OMX_GetParameter (component->handle, types[i], &ports_st)){
+      printf ("error: OMX_GetParameter: %s\n", dump_OMX_ERRORTYPE (error));
       exit (1);
     }
     
     OMX_U32 port;
-    VCOS_UNSIGNED retrievedEvents;
-    for (port=ports.nStartPortNumber;
-        port<ports.nStartPortNumber + ports.nPorts; port++){
+    VCOS_UNSIGNED retrieved_events;
+    for (port=ports_st.nStartPortNumber;
+        port<ports_st.nStartPortNumber + ports_st.nPorts; port++){
       //Disable the port
-      disablePort (component, port);
+      disable_port (component, port);
       //Wait to the event
-      wait (component, EventPortDisable, NULL);
+      wait (component, EVENT_PORT_DISABLE, 0);
     }
   }
 }
 
-void deinitComponent (COMPONENT* component){
-  printf ("Deinitializing component %s\n", component->name);
+void deinit_component (component_t* component){
+  printf ("deinitializing component %s\n", component->name);
   
   OMX_ERRORTYPE error;
   
   vcos_event_flags_delete (&component->flags);
 
   if (error = OMX_FreeHandle (component->handle)){
-    printf ("ERROR: OMX_FreeHandle: %s\n", dump_OMX_ERRORTYPE (error));
+    printf ("error: OMX_FreeHandle: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
 }
 
-void loadCameraDrivers (COMPONENT* component){
+void load_camera_drivers (component_t* component){
   /*
   This is a specific behaviour of the Broadcom's Raspberry Pi OpenMAX IL
   implementation module because the OMX_SetConfig() and OMX_SetParameter() are
@@ -410,332 +410,334 @@ void loadCameraDrivers (COMPONENT* component){
   The red LED of the camera will be turned on after this call.
   */
   
-  printf ("Loading camera drivers\n");
+  printf ("loading camera drivers\n");
   
   OMX_ERRORTYPE error;
 
-  OMX_CONFIG_REQUESTCALLBACKTYPE cbs;
-  OMX_INIT_STRUCTURE (cbs);
-  cbs.nPortIndex = OMX_ALL;
-  cbs.nIndex = OMX_IndexParamCameraDeviceNumber;
-  cbs.bEnable = OMX_TRUE;
+  OMX_CONFIG_REQUESTCALLBACKTYPE cbs_st;
+  OMX_INIT_STRUCTURE (cbs_st);
+  cbs_st.nPortIndex = OMX_ALL;
+  cbs_st.nIndex = OMX_IndexParamCameraDeviceNumber;
+  cbs_st.bEnable = OMX_TRUE;
   if (error = OMX_SetConfig (component->handle, OMX_IndexConfigRequestCallback,
-      &cbs)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &cbs_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
-  OMX_PARAM_U32TYPE device;
-  OMX_INIT_STRUCTURE (device);
-  device.nPortIndex = OMX_ALL;
+  OMX_PARAM_U32TYPE dev_st;
+  OMX_INIT_STRUCTURE (dev_st);
+  dev_st.nPortIndex = OMX_ALL;
   //ID for the camera device
-  device.nU32 = 0;
+  dev_st.nU32 = 0;
   if (error = OMX_SetParameter (component->handle,
-      OMX_IndexParamCameraDeviceNumber, &device)){
-    printf ("ERROR: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
+      OMX_IndexParamCameraDeviceNumber, &dev_st)){
+    printf ("error: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
-  wait (component, EventParamOrConfigChanged, NULL);
+  wait (component, EVENT_PARAM_OR_CONFIG_CHANGED, 0);
 }
 
-void changeState (COMPONENT* component, OMX_STATETYPE state){
-  printf ("Changing %s state to %s\n", component->name,
+void change_state (component_t* component, OMX_STATETYPE state){
+  printf ("changing %s state to %s\n", component->name,
       dump_OMX_STATETYPE (state));
   
   OMX_ERRORTYPE error;
   
   if (error = OMX_SendCommand (component->handle, OMX_CommandStateSet, state,
-      NULL)){
-    printf ("ERROR: OMX_SendCommand: %s\n", dump_OMX_ERRORTYPE (error));
+      0)){
+    printf ("error: OMX_SendCommand: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
 }
 
-void enablePort (COMPONENT* component, OMX_U32 port){
-  printf ("Enabling port %d (%s)\n", port, component->name);
+void enable_port (component_t* component, OMX_U32 port){
+  printf ("enabling port %d (%s)\n", port, component->name);
   
   OMX_ERRORTYPE error;
   
   if (error = OMX_SendCommand (component->handle, OMX_CommandPortEnable,
-      port, NULL)){
-    printf ("ERROR: OMX_SendCommand: %s\n", dump_OMX_ERRORTYPE (error));
+      port, 0)){
+    printf ("error: OMX_SendCommand: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
 }
 
-void disablePort (COMPONENT* component, OMX_U32 port){
-  printf ("Disabling port %d (%s)\n", port, component->name);
+void disable_port (component_t* component, OMX_U32 port){
+  printf ("disabling port %d (%s)\n", port, component->name);
   
   OMX_ERRORTYPE error;
   
   if (error = OMX_SendCommand (component->handle, OMX_CommandPortDisable,
-      port, NULL)){
-    printf ("ERROR: OMX_SendCommand: %s\n", dump_OMX_ERRORTYPE (error));
+      port, 0)){
+    printf ("error: OMX_SendCommand: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
 }
 
-void enableEncoderOutputPort (
-    COMPONENT* encoder,
-    OMX_BUFFERHEADERTYPE** encoderBufferOut){
+void enable_encoder_output_port (
+    component_t* encoder,
+    OMX_BUFFERHEADERTYPE** encoder_output_buffer){
   //The port is not enabled until the buffer is allocated
   OMX_ERRORTYPE error;
   
-  enablePort (encoder, 201);
+  enable_port (encoder, 201);
   
-  OMX_PARAM_PORTDEFINITIONTYPE encoderPortDef;
-  OMX_INIT_STRUCTURE (encoderPortDef);
-  encoderPortDef.nPortIndex = 201;
+  OMX_PARAM_PORTDEFINITIONTYPE def_st;
+  OMX_INIT_STRUCTURE (def_st);
+  def_st.nPortIndex = 201;
   if (error = OMX_GetParameter (encoder->handle, OMX_IndexParamPortDefinition,
-      &encoderPortDef)){
-    printf ("ERROR: OMX_GetParameter: %s\n", dump_OMX_ERRORTYPE (error));
+      &def_st)){
+    printf ("error: OMX_GetParameter: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
-  printf ("Allocating %s output buffer\n", encoder->name);
-  if (error = OMX_AllocateBuffer (encoder->handle, encoderBufferOut, 201, NULL,
-      encoderPortDef.nBufferSize)){
-    printf ("ERROR: OMX_AllocateBuffer: %s\n", dump_OMX_ERRORTYPE (error));
+  printf ("allocating %s output buffer\n", encoder->name);
+  if (error = OMX_AllocateBuffer (encoder->handle, encoder_output_buffer, 201,
+      0, def_st.nBufferSize)){
+    printf ("error: OMX_AllocateBuffer: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
-  wait (encoder, EventPortEnable, NULL);
+  wait (encoder, EVENT_PORT_ENABLE, 0);
 }
 
-void disableEncoderOutputPort (
-    COMPONENT* encoder,
-    OMX_BUFFERHEADERTYPE* encoderBufferOut){
+void disable_encoder_output_port (
+    component_t* encoder,
+    OMX_BUFFERHEADERTYPE* encoder_output_buffer){
   //The port is not disabled until the buffer is released
   OMX_ERRORTYPE error;
   
-  disablePort (encoder, 201);
+  disable_port (encoder, 201);
   
   //Free encoder output buffer
-  printf ("Releasing %s output buffer\n", encoder->name);
-  if (error = OMX_FreeBuffer (encoder->handle, 201, encoderBufferOut)){
-    printf ("ERROR: OMX_FreeBuffer: %s\n", dump_OMX_ERRORTYPE (error));
+  printf ("releasing %s output buffer\n", encoder->name);
+  if (error = OMX_FreeBuffer (encoder->handle, 201, encoder_output_buffer)){
+    printf ("error: OMX_FreeBuffer: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
-  wait (encoder, EventPortDisable, NULL);
+  wait (encoder, EVENT_PORT_DISABLE, 0);
 }
 
-void setCameraSettings (COMPONENT* camera){
-  printf ("Configuring camera settings\n");
+void set_camera_settings (component_t* camera){
+  printf ("configuring camera settings\n");
 
   OMX_ERRORTYPE error;
   
   //Sharpness
-  OMX_CONFIG_SHARPNESSTYPE sharpness;
-  OMX_INIT_STRUCTURE (sharpness);
-  sharpness.nPortIndex = OMX_ALL;
-  sharpness.nSharpness = CAM_SHARPNESS;
+  OMX_CONFIG_SHARPNESSTYPE sharpness_st;
+  OMX_INIT_STRUCTURE (sharpness_st);
+  sharpness_st.nPortIndex = OMX_ALL;
+  sharpness_st.nSharpness = CAM_SHARPNESS;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonSharpness,
-      &sharpness)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &sharpness_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //Contrast
-  OMX_CONFIG_CONTRASTTYPE contrast;
-  OMX_INIT_STRUCTURE (contrast);
-  contrast.nPortIndex = OMX_ALL;
-  contrast.nContrast = CAM_CONTRAST;
+  OMX_CONFIG_CONTRASTTYPE contrast_st;
+  OMX_INIT_STRUCTURE (contrast_st);
+  contrast_st.nPortIndex = OMX_ALL;
+  contrast_st.nContrast = CAM_CONTRAST;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonContrast,
-      &contrast)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &contrast_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //Saturation
-  OMX_CONFIG_SATURATIONTYPE saturation;
-  OMX_INIT_STRUCTURE (saturation);
-  saturation.nPortIndex = OMX_ALL;
-  saturation.nSaturation = CAM_SATURATION;
+  OMX_CONFIG_SATURATIONTYPE saturation_st;
+  OMX_INIT_STRUCTURE (saturation_st);
+  saturation_st.nPortIndex = OMX_ALL;
+  saturation_st.nSaturation = CAM_SATURATION;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonSaturation,
-      &saturation)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &saturation_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //Brightness
-  OMX_CONFIG_BRIGHTNESSTYPE brightness;
-  OMX_INIT_STRUCTURE (brightness);
-  brightness.nPortIndex = OMX_ALL;
-  brightness.nBrightness = CAM_BRIGHTNESS;
+  OMX_CONFIG_BRIGHTNESSTYPE brightness_st;
+  OMX_INIT_STRUCTURE (brightness_st);
+  brightness_st.nPortIndex = OMX_ALL;
+  brightness_st.nBrightness = CAM_BRIGHTNESS;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonBrightness,
-      &brightness)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &brightness_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //Exposure value
-  OMX_CONFIG_EXPOSUREVALUETYPE exposureValue;
-  OMX_INIT_STRUCTURE (exposureValue);
-  exposureValue.nPortIndex = OMX_ALL;
-  exposureValue.eMetering = CAM_METERING;
-  exposureValue.xEVCompensation =
+  OMX_CONFIG_EXPOSUREVALUETYPE exposure_value_st;
+  OMX_INIT_STRUCTURE (exposure_value_st);
+  exposure_value_st.nPortIndex = OMX_ALL;
+  exposure_value_st.eMetering = CAM_METERING;
+  exposure_value_st.xEVCompensation =
       (OMX_S32)((CAM_EXPOSURE_COMPENSATION<<16)/6.0);
-  exposureValue.nShutterSpeedMsec = (OMX_U32)((CAM_SHUTTER_SPEED)*1e6);
-  exposureValue.bAutoShutterSpeed = CAM_SHUTTER_SPEED_AUTO;
-  exposureValue.nSensitivity = CAM_ISO;
-  exposureValue.bAutoSensitivity = CAM_ISO_AUTO;
+  exposure_value_st.nShutterSpeedMsec = (OMX_U32)((CAM_SHUTTER_SPEED)*1e6);
+  exposure_value_st.bAutoShutterSpeed = CAM_SHUTTER_SPEED_AUTO;
+  exposure_value_st.nSensitivity = CAM_ISO;
+  exposure_value_st.bAutoSensitivity = CAM_ISO_AUTO;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonExposureValue,
-      &exposureValue)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &exposure_value_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //Exposure control
-  OMX_CONFIG_EXPOSURECONTROLTYPE exposureControl;
-  OMX_INIT_STRUCTURE (exposureControl);
-  exposureControl.nPortIndex = OMX_ALL;
-  exposureControl.eExposureControl = CAM_EXPOSURE;
+  OMX_CONFIG_EXPOSURECONTROLTYPE exposure_control_st;
+  OMX_INIT_STRUCTURE (exposure_control_st);
+  exposure_control_st.nPortIndex = OMX_ALL;
+  exposure_control_st.eExposureControl = CAM_EXPOSURE;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonExposure,
-      &exposureControl)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &exposure_control_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //Frame stabilisation
-  OMX_CONFIG_FRAMESTABTYPE frameStabilisation;
-  OMX_INIT_STRUCTURE (frameStabilisation);
-  frameStabilisation.nPortIndex = OMX_ALL;
-  frameStabilisation.bStab = CAM_FRAME_STABILIZATION;
+  OMX_CONFIG_FRAMESTABTYPE frame_stabilisation_st;
+  OMX_INIT_STRUCTURE (frame_stabilisation_st);
+  frame_stabilisation_st.nPortIndex = OMX_ALL;
+  frame_stabilisation_st.bStab = CAM_FRAME_STABILIZATION;
   if (error = OMX_SetConfig (camera->handle,
-      OMX_IndexConfigCommonFrameStabilisation, &frameStabilisation)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      OMX_IndexConfigCommonFrameStabilisation, &frame_stabilisation_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //White balance
-  OMX_CONFIG_WHITEBALCONTROLTYPE whiteBalance;
-  OMX_INIT_STRUCTURE (whiteBalance);
-  whiteBalance.nPortIndex = OMX_ALL;
-  whiteBalance.eWhiteBalControl = CAM_WHITE_BALANCE;
+  OMX_CONFIG_WHITEBALCONTROLTYPE white_balance_st;
+  OMX_INIT_STRUCTURE (white_balance_st);
+  white_balance_st.nPortIndex = OMX_ALL;
+  white_balance_st.eWhiteBalControl = CAM_WHITE_BALANCE;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonWhiteBalance,
-      &whiteBalance)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &white_balance_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //White balance gains (if white balance is set to off)
   if (!CAM_WHITE_BALANCE){
-    OMX_CONFIG_CUSTOMAWBGAINSTYPE whiteBalanceGains;
-    OMX_INIT_STRUCTURE (whiteBalanceGains);
-    whiteBalanceGains.xGainR = (OMX_U32)(CAM_WHITE_BALANCE_RED_GAIN*65536);
-    whiteBalanceGains.xGainB = (OMX_U32)(CAM_WHITE_BALANCE_BLUE_GAIN*65536);
+    OMX_CONFIG_CUSTOMAWBGAINSTYPE white_balance_gains_st;
+    OMX_INIT_STRUCTURE (white_balance_gains_st);
+    white_balance_gains_st.xGainR = (OMX_U32)(CAM_WHITE_BALANCE_RED_GAIN*65536);
+    white_balance_gains_st.xGainB =
+        (OMX_U32)(CAM_WHITE_BALANCE_BLUE_GAIN*65536);
     if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCustomAwbGains,
-        &whiteBalanceGains)){
-      printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+        &white_balance_gains_st)){
+      printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
       exit (1);
     }
   }
   //Image filter
-  OMX_CONFIG_IMAGEFILTERTYPE imageFilter;
-  OMX_INIT_STRUCTURE (imageFilter);
-  imageFilter.nPortIndex = OMX_ALL;
-  imageFilter.eImageFilter = CAM_IMAGE_FILTER;
+  OMX_CONFIG_IMAGEFILTERTYPE image_filter_st;
+  OMX_INIT_STRUCTURE (image_filter_st);
+  image_filter_st.nPortIndex = OMX_ALL;
+  image_filter_st.eImageFilter = CAM_IMAGE_FILTER;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonImageFilter,
-      &imageFilter)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &image_filter_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //Mirror
-  OMX_CONFIG_MIRRORTYPE mirror;
-  OMX_INIT_STRUCTURE (mirror);
-  mirror.nPortIndex = 71;
-  mirror.eMirror = CAM_MIRROR;
+  OMX_CONFIG_MIRRORTYPE mirror_st;
+  OMX_INIT_STRUCTURE (mirror_st);
+  mirror_st.nPortIndex = 71;
+  mirror_st.eMirror = CAM_MIRROR;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonMirror,
-      &mirror)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &mirror_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //Rotation
-  OMX_CONFIG_ROTATIONTYPE rotation;
-  OMX_INIT_STRUCTURE (rotation);
-  rotation.nPortIndex = 71;
-  rotation.nRotation = CAM_ROTATION;
+  OMX_CONFIG_ROTATIONTYPE rotation_st;
+  OMX_INIT_STRUCTURE (rotation_st);
+  rotation_st.nPortIndex = 71;
+  rotation_st.nRotation = CAM_ROTATION;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonRotate,
-      &rotation)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &rotation_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //Color enhancement
-  OMX_CONFIG_COLORENHANCEMENTTYPE colorEnhancement;
-  OMX_INIT_STRUCTURE (colorEnhancement);
-  colorEnhancement.nPortIndex = OMX_ALL;
-  colorEnhancement.bColorEnhancement = CAM_COLOR_ENABLE;
-  colorEnhancement.nCustomizedU = CAM_COLOR_U;
-  colorEnhancement.nCustomizedV = CAM_COLOR_V;
+  OMX_CONFIG_COLORENHANCEMENTTYPE color_enhancement_st;
+  OMX_INIT_STRUCTURE (color_enhancement_st);
+  color_enhancement_st.nPortIndex = OMX_ALL;
+  color_enhancement_st.bColorEnhancement = CAM_COLOR_ENABLE;
+  color_enhancement_st.nCustomizedU = CAM_COLOR_U;
+  color_enhancement_st.nCustomizedV = CAM_COLOR_V;
   if (error = OMX_SetConfig (camera->handle,
-      OMX_IndexConfigCommonColorEnhancement, &colorEnhancement)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      OMX_IndexConfigCommonColorEnhancement, &color_enhancement_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   //Denoise
-  OMX_CONFIG_BOOLEANTYPE denoise;
-  OMX_INIT_STRUCTURE (denoise);
-  denoise.bEnabled = CAM_NOISE_REDUCTION;
+  OMX_CONFIG_BOOLEANTYPE denoise_st;
+  OMX_INIT_STRUCTURE (denoise_st);
+  denoise_st.bEnabled = CAM_NOISE_REDUCTION;
   if (error = OMX_SetConfig (camera->handle,
-      OMX_IndexConfigStillColourDenoiseEnable, &denoise)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      OMX_IndexConfigStillColourDenoiseEnable, &denoise_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
 }
 
-void setH264Settings (COMPONENT* encoder){
+void setH264Settings (component_t* encoder){
   OMX_ERRORTYPE error;
   
-  //Configure bitrate
-  printf ("Configuring %s bitrate\n", encoder->name);
-  OMX_VIDEO_PARAM_BITRATETYPE bitrate;
-  OMX_INIT_STRUCTURE (bitrate);
-  bitrate.eControlRate = OMX_Video_ControlRateVariable;
-  bitrate.nTargetBitrate = VIDEO_BITRATE;
-  bitrate.nPortIndex = 201;
+  printf ("configuring '%s' settings", encoder->name);
+  
+  //Bitrate
+  OMX_VIDEO_PARAM_BITRATETYPE bitrate_st;
+  OMX_INIT_STRUCTURE (bitrate_st);
+  bitrate_st.eControlRate = OMX_Video_ControlRateVariable;
+  bitrate_st.nTargetBitrate = VIDEO_BITRATE;
+  bitrate_st.nPortIndex = 201;
   if (error = OMX_SetParameter (encoder->handle, OMX_IndexParamVideoBitrate,
-      &bitrate)){
-    printf ("ERROR: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
+      &bitrate_st)){
+    printf ("error: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
-  //Configure codec
-  printf ("Configuring %s codec\n", encoder->name);
-  OMX_VIDEO_PARAM_PORTFORMATTYPE format;
-  OMX_INIT_STRUCTURE (format);
-  format.nPortIndex = 201;
-  format.eCompressionFormat = VIDEO_CODEC;
+  //Codec
+  OMX_VIDEO_PARAM_PORTFORMATTYPE format_st;
+  OMX_INIT_STRUCTURE (format_st);
+  format_st.nPortIndex = 201;
+  //H.264/AVC
+  format_st.eCompressionFormat = OMX_VIDEO_CodingAVC;
   if (error = OMX_SetParameter (encoder->handle, OMX_IndexParamVideoPortFormat,
-      &format)){
-    printf ("ERROR: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
+      &format_st)){
+    printf ("error: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
-  //Configure IDR period
-  OMX_VIDEO_CONFIG_AVCINTRAPERIOD idr;
-  OMX_INIT_STRUCTURE (idr);
-  idr.nPortIndex = 201;
+  //IDR period
+  OMX_VIDEO_CONFIG_AVCINTRAPERIOD idr_st;
+  OMX_INIT_STRUCTURE (idr_st);
+  idr_st.nPortIndex = 201;
   if (error = OMX_GetConfig (encoder->handle,
-      OMX_IndexConfigVideoAVCIntraPeriod, &idr)){
-    printf ("ERROR: OMX_GetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      OMX_IndexConfigVideoAVCIntraPeriod, &idr_st)){
+    printf ("error: OMX_GetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
-  idr.nIDRPeriod = VIDEO_IDR_PERIOD;
+  idr_st.nIDRPeriod = VIDEO_IDR_PERIOD;
   if (error = OMX_SetConfig (encoder->handle,
-      OMX_IndexConfigVideoAVCIntraPeriod, &idr)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      OMX_IndexConfigVideoAVCIntraPeriod, &idr_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
 }
 
 int main (){
   OMX_ERRORTYPE error;
-  OMX_BUFFERHEADERTYPE* encoderBufferOut;
-  OMX_BUFFERHEADERTYPE* cameraBufferOut;
-  COMPONENT camera;
-  COMPONENT encoder;
-  COMPONENT nullSink;
+  OMX_BUFFERHEADERTYPE* encoder_output_buffer;
+  OMX_BUFFERHEADERTYPE* camera_output_buffer;
+  component_t camera;
+  component_t encoder;
+  component_t null_sink;
   camera.name = "OMX.broadcom.camera";
   encoder.name = "OMX.broadcom.video_encode";
-  nullSink.name = "OMX.broadcom.null_sink";
+  null_sink.name = "OMX.broadcom.null_sink";
   
   //Open the file
   int fd = open (FILENAME, O_WRONLY | O_CREAT | O_TRUNC | O_APPEND, 0666);
   if (fd == -1){
-    printf ("ERROR: open\n");
+    printf ("error: open\n");
     exit (1);
   }
   
@@ -744,92 +746,92 @@ int main (){
   
   //Initialize OpenMAX IL
   if (error = OMX_Init ()){
-    printf ("ERROR: OMX_Init: %s\n", dump_OMX_ERRORTYPE (error));
+    printf ("error: OMX_Init: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
   //Initialize components
-  initComponent (&camera);
-  initComponent (&encoder);
-  initComponent (&nullSink);
+  init_component (&camera);
+  init_component (&encoder);
+  init_component (&null_sink);
   
   //Initialize camera drivers
-  loadCameraDrivers (&camera);
+  load_camera_drivers (&camera);
   
   //Configure camera port definition
-  printf ("Configuring %s port definition\n", camera.name);
-  OMX_PARAM_PORTDEFINITIONTYPE portDefinition;
-  OMX_INIT_STRUCTURE (portDefinition);
-  portDefinition.nPortIndex = 71;
+  printf ("configuring %s port definition\n", camera.name);
+  OMX_PARAM_PORTDEFINITIONTYPE def_st;
+  OMX_INIT_STRUCTURE (def_st);
+  def_st.nPortIndex = 71;
   if (error = OMX_GetParameter (camera.handle, OMX_IndexParamPortDefinition,
-      &portDefinition)){
-    printf ("ERROR: OMX_GetParameter: %s\n", dump_OMX_ERRORTYPE (error));
+      &def_st)){
+    printf ("error: OMX_GetParameter: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
-  portDefinition.format.video.nFrameWidth = CAM_WIDTH;
-  portDefinition.format.video.nFrameHeight = CAM_HEIGHT;
+  def_st.format.video.nFrameWidth = CAM_WIDTH;
+  def_st.format.video.nFrameHeight = CAM_HEIGHT;
   //Stride is byte-per-pixel*width, YUV has 1 byte per pixel, so the stride is
   //the width. See mmal/util/mmal_util.c, mmal_encoding_width_to_stride()
-  portDefinition.format.video.nStride = CAM_WIDTH;
-  portDefinition.format.video.xFramerate = VIDEO_FRAMERATE << 16;
-  portDefinition.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
-  portDefinition.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
+  def_st.format.video.nStride = CAM_WIDTH;
+  def_st.format.video.xFramerate = VIDEO_FRAMERATE << 16;
+  def_st.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
+  def_st.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
   if (error = OMX_SetParameter (camera.handle, OMX_IndexParamPortDefinition,
-      &portDefinition)){
-    printf ("ERROR: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
+      &def_st)){
+    printf ("error: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
   //Preview port
-  portDefinition.nPortIndex = 70;
+  def_st.nPortIndex = 70;
   if (error = OMX_SetParameter (camera.handle, OMX_IndexParamPortDefinition,
-      &portDefinition)){
-    printf ("ERROR: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
+      &def_st)){
+    printf ("error: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
-  printf ("Configuring %s framerate\n", camera.name);
-  OMX_CONFIG_FRAMERATETYPE framerate;
-  OMX_INIT_STRUCTURE (framerate);
-  framerate.nPortIndex = 71;
-  framerate.xEncodeFramerate = portDefinition.format.video.xFramerate;
+  printf ("configuring %s framerate\n", camera.name);
+  OMX_CONFIG_FRAMERATETYPE framerate_st;
+  OMX_INIT_STRUCTURE (framerate_st);
+  framerate_st.nPortIndex = 71;
+  framerate_st.xEncodeFramerate = def_st.format.video.xFramerate;
   if (error = OMX_SetConfig (camera.handle, OMX_IndexConfigVideoFramerate,
-      &framerate)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &framerate_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
   //Preview port
-  framerate.nPortIndex = 70;
+  framerate_st.nPortIndex = 70;
   if (error = OMX_SetConfig (camera.handle, OMX_IndexConfigVideoFramerate,
-      &framerate)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &framerate_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
   //Configure camera settings
-  setCameraSettings (&camera);
+  set_camera_settings (&camera);
   
   //Configure encoder port definition
-  printf ("Configuring %s port definition\n", encoder.name);
-  OMX_INIT_STRUCTURE (portDefinition);
-  portDefinition.nPortIndex = 201;
+  printf ("configuring %s port definition\n", encoder.name);
+  OMX_INIT_STRUCTURE (def_st);
+  def_st.nPortIndex = 201;
   if ((error = OMX_GetParameter (encoder.handle, OMX_IndexParamPortDefinition,
-      &portDefinition))){
-    printf ("ERROR: OMX_GetParameter: %s\n", dump_OMX_ERRORTYPE (error));
+      &def_st))){
+    printf ("error: OMX_GetParameter: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
-  portDefinition.format.video.nFrameWidth = CAM_WIDTH;
-  portDefinition.format.video.nFrameHeight = CAM_HEIGHT;
-  portDefinition.format.video.nStride = CAM_WIDTH;
-  portDefinition.format.video.xFramerate = VIDEO_FRAMERATE << 16;
+  def_st.format.video.nFrameWidth = CAM_WIDTH;
+  def_st.format.video.nFrameHeight = CAM_HEIGHT;
+  def_st.format.video.nStride = CAM_WIDTH;
+  def_st.format.video.xFramerate = VIDEO_FRAMERATE << 16;
   //Despite being configured later, these two fields need to be set
-  portDefinition.format.video.nBitrate = VIDEO_BITRATE;
-  portDefinition.format.video.eCompressionFormat = VIDEO_CODEC;
+  def_st.format.video.nBitrate = VIDEO_BITRATE;
+  def_st.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
   if (error = OMX_SetParameter (encoder.handle, OMX_IndexParamPortDefinition,
-      &portDefinition)){
-    printf ("ERROR: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
+      &def_st)){
+    printf ("error: OMX_SetParameter: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
@@ -837,55 +839,55 @@ int main (){
   setH264Settings (&encoder);
   
   //Setup tunnels: camera (video) -> video_encode, camera (preview) -> null_sink
-  printf ("Configuring tunnels\n");
+  printf ("configuring tunnels\n");
   if (error = OMX_SetupTunnel (camera.handle, 71, encoder.handle, 200)){
-    printf ("ERROR: OMX_SetupTunnel: %s\n", dump_OMX_ERRORTYPE (error));
+    printf ("error: OMX_SetupTunnel: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
-  if (error = OMX_SetupTunnel (camera.handle, 70, nullSink.handle, 240)){
-    printf ("ERROR: OMX_SetupTunnel: %s\n", dump_OMX_ERRORTYPE (error));
+  if (error = OMX_SetupTunnel (camera.handle, 70, null_sink.handle, 240)){
+    printf ("error: OMX_SetupTunnel: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
   //Change state to IDLE
-  changeState (&camera, OMX_StateIdle);
-  wait (&camera, EventStateSet, NULL);
-  changeState (&encoder, OMX_StateIdle);
-  wait (&encoder, EventStateSet, NULL);
-  changeState (&nullSink, OMX_StateIdle);
-  wait (&nullSink, EventStateSet, NULL);
+  change_state (&camera, OMX_StateIdle);
+  wait (&camera, EVENT_STATE_SET, 0);
+  change_state (&encoder, OMX_StateIdle);
+  wait (&encoder, EVENT_STATE_SET, 0);
+  change_state (&null_sink, OMX_StateIdle);
+  wait (&null_sink, EVENT_STATE_SET, 0);
   
   //Enable the ports
-  enablePort (&camera, 71);
-  wait (&camera, EventPortEnable, NULL);
-  enablePort (&camera, 70);
-  wait (&camera, EventPortEnable, NULL);
-  enablePort (&nullSink, 240);
-  wait (&nullSink, EventPortEnable, NULL);
-  enablePort (&encoder, 200);
-  wait (&encoder, EventPortEnable, NULL);
-  enableEncoderOutputPort (&encoder, &encoderBufferOut);
+  enable_port (&camera, 71);
+  wait (&camera, EVENT_PORT_ENABLE, 0);
+  enable_port (&camera, 70);
+  wait (&camera, EVENT_PORT_ENABLE, 0);
+  enable_port (&null_sink, 240);
+  wait (&null_sink, EVENT_PORT_ENABLE, 0);
+  enable_port (&encoder, 200);
+  wait (&encoder, EVENT_PORT_ENABLE, 0);
+  enable_encoder_output_port (&encoder, &encoder_output_buffer);
   
   //Change state to EXECUTING
-  changeState (&camera, OMX_StateExecuting);
-  wait (&camera, EventStateSet, NULL);
-  changeState (&encoder, OMX_StateExecuting);
-  wait (&encoder, EventStateSet, NULL);
-  wait (&encoder, EventPortSettingsChanged, NULL);
-  changeState (&nullSink, OMX_StateExecuting);
-  wait (&nullSink, EventStateSet, NULL);
+  change_state (&camera, OMX_StateExecuting);
+  wait (&camera, EVENT_STATE_SET, 0);
+  change_state (&encoder, OMX_StateExecuting);
+  wait (&encoder, EVENT_STATE_SET, 0);
+  wait (&encoder, EVENT_PORT_SETTINGS_CHANGED, 0);
+  change_state (&null_sink, OMX_StateExecuting);
+  wait (&null_sink, EVENT_STATE_SET, 0);
   
   //Enable camera capture port. This basically says that the port 71 will be
   //used to get data from the camera. If you're capturing a still, the port 72
   //must be used
-  printf ("Enabling %s capture port\n", camera.name);
-  OMX_CONFIG_PORTBOOLEANTYPE cameraCapturePort;
-  OMX_INIT_STRUCTURE (cameraCapturePort);
-  cameraCapturePort.nPortIndex = 71;
-  cameraCapturePort.bEnabled = OMX_TRUE;
+  printf ("enabling %s capture port\n", camera.name);
+  OMX_CONFIG_PORTBOOLEANTYPE capture_st;
+  OMX_INIT_STRUCTURE (capture_st);
+  capture_st.nPortIndex = 71;
+  capture_st.bEnabled = OMX_TRUE;
   if (error = OMX_SetConfig (camera.handle, OMX_IndexConfigPortCapturing,
-      &cameraCapturePort)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &capture_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
@@ -897,18 +899,19 @@ int main (){
   
   while (1){
     //Get the buffer data
-    if (error = OMX_FillThisBuffer (encoder.handle, encoderBufferOut)){
-      printf ("ERROR: OMX_FillThisBuffer: %s\n", dump_OMX_ERRORTYPE (error));
+    if (error = OMX_FillThisBuffer (encoder.handle, encoder_output_buffer)){
+      printf ("error: OMX_FillThisBuffer: %s\n", dump_OMX_ERRORTYPE (error));
       exit (1);
     }
     
     //Wait until it's filled
-    wait (&encoder, EventFillBufferDone, NULL);
+    wait (&encoder, EVENT_FILL_BUFFER_DONE, 0);
     
     //Append the buffer into the file
-    if (pwrite (fd, encoderBufferOut->pBuffer, encoderBufferOut->nFilledLen,
-        encoderBufferOut->nOffset) == -1){
-      printf ("ERROR: pwrite\n");
+    if (pwrite (fd, encoder_output_buffer->pBuffer,
+        encoder_output_buffer->nFilledLen,
+        encoder_output_buffer->nOffset) == -1){
+      printf ("error: pwrite\n");
       exit (1);
     }
     
@@ -919,49 +922,49 @@ int main (){
   printf ("------------------------------------------------\n");
   
   //Disable camera capture port
-  printf ("Disabling %s capture port\n", camera.name);
-  cameraCapturePort.bEnabled = OMX_FALSE;
+  printf ("disabling %s capture port\n", camera.name);
+  capture_st.bEnabled = OMX_FALSE;
   if (error = OMX_SetConfig (camera.handle, OMX_IndexConfigPortCapturing,
-      &cameraCapturePort)){
-    printf ("ERROR: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+      &capture_st)){
+    printf ("error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
   //Change state to IDLE
-  changeState (&camera, OMX_StateIdle);
-  wait (&camera, EventStateSet, NULL);
-  changeState (&encoder, OMX_StateIdle);
-  wait (&encoder, EventStateSet, NULL);
-  changeState (&nullSink, OMX_StateIdle);
-  wait (&nullSink, EventStateSet, NULL);
+  change_state (&camera, OMX_StateIdle);
+  wait (&camera, EVENT_STATE_SET, 0);
+  change_state (&encoder, OMX_StateIdle);
+  wait (&encoder, EVENT_STATE_SET, 0);
+  change_state (&null_sink, OMX_StateIdle);
+  wait (&null_sink, EVENT_STATE_SET, 0);
   
   //Disable the tunnel ports
-  disablePort (&camera, 71);
-  wait (&camera, EventPortDisable, NULL);
-  disablePort (&camera, 70);
-  wait (&camera, EventPortDisable, NULL);
-  disablePort (&nullSink, 240);
-  wait (&nullSink, EventPortDisable, NULL);
-  disablePort (&encoder, 200);
-  wait (&encoder, EventPortDisable, NULL);
-  disableEncoderOutputPort (&encoder, encoderBufferOut);
+  disable_port (&camera, 71);
+  wait (&camera, EVENT_PORT_DISABLE, 0);
+  disable_port (&camera, 70);
+  wait (&camera, EVENT_PORT_DISABLE, 0);
+  disable_port (&null_sink, 240);
+  wait (&null_sink, EVENT_PORT_DISABLE, 0);
+  disable_port (&encoder, 200);
+  wait (&encoder, EVENT_PORT_DISABLE, 0);
+  disable_encoder_output_port (&encoder, encoder_output_buffer);
   
   //Change state to LOADED
-  changeState (&camera, OMX_StateLoaded);
-  wait (&camera, EventStateSet, NULL);
-  changeState (&encoder, OMX_StateLoaded);
-  wait (&encoder, EventStateSet, NULL);
-  changeState (&nullSink, OMX_StateLoaded);
-  wait (&nullSink, EventStateSet, NULL);
+  change_state (&camera, OMX_StateLoaded);
+  wait (&camera, EVENT_STATE_SET, 0);
+  change_state (&encoder, OMX_StateLoaded);
+  wait (&encoder, EVENT_STATE_SET, 0);
+  change_state (&null_sink, OMX_StateLoaded);
+  wait (&null_sink, EVENT_STATE_SET, 0);
   
   //Deinitialize components
-  deinitComponent (&camera);
-  deinitComponent (&encoder);
-  deinitComponent (&nullSink);
+  deinit_component (&camera);
+  deinit_component (&encoder);
+  deinit_component (&null_sink);
   
   //Deinitialize OpenMAX IL
   if (error = OMX_Deinit ()){
-    printf ("ERROR: OMX_Deinit: %s\n", dump_OMX_ERRORTYPE (error));
+    printf ("error: OMX_Deinit: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
@@ -970,7 +973,7 @@ int main (){
   
   //Close the file
   if (close (fd)){
-    printf ("ERROR: close\n");
+    printf ("error: close\n");
     exit (1);
   }
   
