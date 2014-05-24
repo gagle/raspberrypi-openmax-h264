@@ -24,7 +24,8 @@ Very quick OpenMAX IL explanation:
 
 Note: The camera component has two video ports: "preview" and "video". The
 "preview" port must be enabled even if you don't need it (tunnel it to the
-null_sink component).
+null_sink component) because it is used to run AGC (automatic gain control) and
+AWB (auto white balance) algorithms.
 */
 
 #include <stdarg.h>
@@ -635,7 +636,7 @@ void setCameraSettings (COMPONENT* camera){
   //Mirror
   OMX_CONFIG_MIRRORTYPE mirror;
   OMX_INIT_STRUCTURE (mirror);
-  mirror.nPortIndex = 72;
+  mirror.nPortIndex = 71;
   mirror.eMirror = CAM_MIRROR;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonMirror,
       &mirror)){
@@ -645,7 +646,7 @@ void setCameraSettings (COMPONENT* camera){
   //Rotation
   OMX_CONFIG_ROTATIONTYPE rotation;
   OMX_INIT_STRUCTURE (rotation);
-  rotation.nPortIndex = 72;
+  rotation.nPortIndex = 71;
   rotation.nRotation = CAM_ROTATION;
   if (error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonRotate,
       &rotation)){
