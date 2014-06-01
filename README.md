@@ -10,8 +10,12 @@ This example records a 3 second video in H.264 format. The components involved a
 If you want to play the video, you'll need to wrap it with a container format (some video players couldn't require this step), e.g. Matroska. You can download Matroska tools from [here](http://www.bunkus.org/videotools/mkvtoolnix). Then, convert the H.264 file to a Matroska file:
 
 ```
-$ mkvmerge -o video.mkv video.h264
+$ mkvmerge --default-duration 0:25p -o video.mkv video.h264
 ```
+
+Where `25p` is the encoding framerate of the h264 video. For example, if you record a 640x480 @30fps, then you should encode the matroska file with `--default-duration 0:30p`.
+
+Where
 
 Build steps:
 
