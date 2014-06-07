@@ -81,6 +81,10 @@ AWB (auto white balance) algorithms.
 #define CAM_WHITE_BALANCE_RED_GAIN 0.1 //0.001 .. 7.999
 #define CAM_WHITE_BALANCE_BLUE_GAIN 0.1 //0.001 .. 7.999
 #define CAM_IMAGE_FILTER OMX_ImageFilterNone
+#define CAM_ROI_TOP 0.0 //0.0 .. 1.0
+#define CAM_ROI_LEFT 0.0 //0.0 .. 1.0
+#define CAM_ROI_WIDTH 1.0 //0.0 .. 1.0
+#define CAM_ROI_HEIGHT 1.0 //0.0 .. 1.0
 
 /*
 Possible values:
@@ -693,6 +697,20 @@ void set_camera_settings (component_t* camera){
   denoise_st.bEnabled = CAM_NOISE_REDUCTION;
   if ((error = OMX_SetConfig (camera->handle,
       OMX_IndexConfigStillColourDenoiseEnable, &denoise_st))){
+    fprintf (stderr, "error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+    exit (1);
+  }
+  
+  //ROI
+  OMX_CONFIG_INPUTCROPTYPE roi;
+  OMX_INIT_STRUCTURE (roi);
+  roi.nPortIndex = OMX_ALL;
+  roi.xLeft = (OMX_U32)(CAM_ROI_LEFT*65536);
+  roi.xTop = (OMX_U32)(CAM_ROI_TOP*65536);
+  roi.xWidth = (OMX_U32)(CAM_ROI_WIDTH*65536);
+  roi.xHeight = (OMX_U32)(CAM_ROI_HEIGHT*65536);
+  if ((error = OMX_SetConfig (camera->handle,
+      OMX_IndexConfigInputCropPercentages, &roi))){
     fprintf (stderr, "error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
