@@ -250,9 +250,9 @@ void dump_OMX_PARAM_PORTDEFINITIONTYPE (
     case OMX_PortDomainAudio:
       strcpy (domain, "OMX_PortDomainAudio");
       sprintf (domain_info,
-          "		cMIMEType: %s\n"
-          "		bFlagErrorConcealment: %s\n"
-          "		eEncoding: %s\n",
+          "    cMIMEType: %s\n"
+          "    bFlagErrorConcealment: %s\n"
+          "    eEncoding: %s\n",
           port->format.video.cMIMEType,
           port->format.image.bFlagErrorConcealment ? "true" : "false",
           dump_OMX_AUDIO_CODINGTYPE (
@@ -261,16 +261,16 @@ void dump_OMX_PARAM_PORTDEFINITIONTYPE (
     case OMX_PortDomainVideo:
       strcpy (domain, "OMX_PortDomainVideo");
       sprintf (domain_info,
-          "		cMIMEType: %s\n"
-          "		nFrameWidth: %d\n"
-          "		nFrameHeight: %d\n"
-          "		nStride: %d\n"
-          "		nSliceHeight: %d\n"
-          "		nBitrate: %d\n"
-          "		xFramerate: %d\n"
-          "		bFlagErrorConcealment: %s\n"
-          "		eCompressionFormat: %s\n"
-          "		eColorFormat: %s\n"
+          "    cMIMEType: %s\n"
+          "    nFrameWidth: %d\n"
+          "    nFrameHeight: %d\n"
+          "    nStride: %d\n"
+          "    nSliceHeight: %d\n"
+          "    nBitrate: %d\n"
+          "    xFramerate: %d\n"
+          "    bFlagErrorConcealment: %s\n"
+          "    eCompressionFormat: %s\n"
+          "    eColorFormat: %s\n"
           , port->format.video.cMIMEType,
           port->format.video.nFrameWidth,
           port->format.video.nFrameHeight,
@@ -287,14 +287,14 @@ void dump_OMX_PARAM_PORTDEFINITIONTYPE (
     case OMX_PortDomainImage:
       strcpy (domain, "OMX_PortDomainImage");
       sprintf (domain_info,
-          "		cMIMEType: %s\n"
-          "		nFrameWidth: %d\n"
-          "		nFrameHeight: %d\n"
-          "		nStride: %d\n"
-          "		nSliceHeight: %d\n"
-          "		bFlagErrorConcealment: %s\n"
-          "		eCompressionFormat: %s\n"
-          "		eColorFormat: %s\n"
+          "    cMIMEType: %s\n"
+          "    nFrameWidth: %d\n"
+          "    nFrameHeight: %d\n"
+          "    nStride: %d\n"
+          "    nSliceHeight: %d\n"
+          "    bFlagErrorConcealment: %s\n"
+          "    eCompressionFormat: %s\n"
+          "    eColorFormat: %s\n"
           , port->format.image.cMIMEType,
           port->format.image.nFrameWidth,
           port->format.image.nFrameHeight,
@@ -309,13 +309,13 @@ void dump_OMX_PARAM_PORTDEFINITIONTYPE (
     case OMX_PortDomainOther:
       strcpy (domain, "OMX_PortDomainOther");
       sprintf (domain_info,
-          "		eFormat: %s\n",
+          "    eFormat: %s\n",
           dump_OMX_OTHER_FORMATTYPE (
               port->format.other.eFormat));
       break;
     default:
       strcpy (domain, "unknown");
-      strcpy (domain_info, "		unknown");
+      strcpy (domain_info, "    unknown");
       break;
   }
   
@@ -329,7 +329,7 @@ void dump_OMX_PARAM_PORTDEFINITIONTYPE (
       "bEnabled: %s\n"
       "bPopulated: %s\n"
       "eDomain: %s\n"
-      "	format:\n"
+      "  format:\n"
       "%s"
       "bBuffersContiguous: %s\n"
       "nBufferAlignment: %d\n",
