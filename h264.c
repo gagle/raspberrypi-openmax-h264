@@ -19,7 +19,7 @@ Very quick OpenMAX IL explanation:
   functions are synchronous and the non-blocking are asynchronous. Being
   asynchronous means that the function returns immediately but the result is
   returned in a later time, so you need to wait until you receive an event. This
-  example	ses two non-blocking functions: OMX_SendCommand and
+  example	uses two non-blocking functions: OMX_SendCommand and
   OMX_FillThisBuffer.
 
 Note: The camera component has two video ports: "preview" and "video". The
