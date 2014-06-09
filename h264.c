@@ -19,7 +19,7 @@ Very quick OpenMAX IL explanation:
   functions are synchronous and the non-blocking are asynchronous. Being
   asynchronous means that the function returns immediately but the result is
   returned in a later time, so you need to wait until you receive an event. This
-  example  ses two non-blocking functions: OMX_SendCommand and
+  example	ses two non-blocking functions: OMX_SendCommand and
   OMX_FillThisBuffer.
 
 Note: The camera component has two video ports: "preview" and "video". The
@@ -591,8 +591,8 @@ void set_camera_settings (component_t* camera){
   exposure_value_st.bAutoShutterSpeed = CAM_SHUTTER_SPEED_AUTO;
   exposure_value_st.nSensitivity = CAM_ISO;
   exposure_value_st.bAutoSensitivity = CAM_ISO_AUTO;
-  if ((error = OMX_SetConfig (camera->handle, OMX_IndexConfigCommonExposureValue,
-      &exposure_value_st))){
+  if ((error = OMX_SetConfig (camera->handle,
+      OMX_IndexConfigCommonExposureValue, &exposure_value_st))){
     fprintf (stderr, "error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
     exit (1);
   }
@@ -717,7 +717,7 @@ void set_camera_settings (component_t* camera){
 }
 
 void set_h264_settings (component_t* encoder){
-  printf ("configuring '%s' settings", encoder->name);
+  printf ("configuring '%s' settings\n", encoder->name);
   
   OMX_ERRORTYPE error;
   

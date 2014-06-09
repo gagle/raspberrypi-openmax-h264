@@ -25,7 +25,7 @@ $(BIN): $(OBJS)
 .PHONY: clean rebuild
 
 clean:
-	rm -f $(BIN) $(BIN).o dump.o
+	rm -f $(BIN) $(BIN).o dump.o video.h264
 
 rebuild:
 	make clean && make
