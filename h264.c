@@ -493,18 +493,18 @@ void enable_encoder_output_port (
   
   enable_port (encoder, 201);
   
-  OMX_PARAM_PORTDEFINITIONTYPE def_st;
-  OMX_INIT_STRUCTURE (def_st);
-  def_st.nPortIndex = 201;
+  OMX_PARAM_PORTDEFINITIONTYPE port_st;
+  OMX_INIT_STRUCTURE (port_st);
+  port_st.nPortIndex = 201;
   if ((error = OMX_GetParameter (encoder->handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_GetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   printf ("allocating %s output buffer\n", encoder->name);
   if ((error = OMX_AllocateBuffer (encoder->handle, encoder_output_buffer, 201,
-      0, def_st.nBufferSize))){
+      0, port_st.nBufferSize))){
     fprintf (stderr, "error: OMX_AllocateBuffer: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
@@ -800,35 +800,34 @@ int main (){
   
   //Configure camera port definition
   printf ("configuring %s port definition\n", camera.name);
-  OMX_PARAM_PORTDEFINITIONTYPE def_st;
-  OMX_INIT_STRUCTURE (def_st);
-  def_st.nPortIndex = 71;
+  OMX_PARAM_PORTDEFINITIONTYPE port_st;
+  OMX_INIT_STRUCTURE (port_st);
+  port_st.nPortIndex = 71;
   if ((error = OMX_GetParameter (camera.handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_GetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
-  def_st.format.video.nFrameWidth = CAM_WIDTH;
-  def_st.format.video.nFrameHeight = CAM_HEIGHT;
-  //Stride is byte-per-pixel*width, YUV has 1 byte per pixel, so the stride is
-  //the width. See mmal/util/mmal_util.c, mmal_encoding_width_to_stride()
-  def_st.format.video.nStride = CAM_WIDTH;
-  def_st.format.video.xFramerate = VIDEO_FRAMERATE << 16;
-  def_st.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
-  def_st.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
+  port_st.format.video.nFrameWidth = CAM_WIDTH;
+  port_st.format.video.nFrameHeight = CAM_HEIGHT;
+  port_st.format.video.nStride = CAM_WIDTH;
+  port_st.format.video.xFramerate = VIDEO_FRAMERATE << 16;
+  port_st.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
+  port_st.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
   if ((error = OMX_SetParameter (camera.handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_SetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
   //Preview port
-  def_st.nPortIndex = 70;
+  port_st.nPortIndex = 70;
+  port_st.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
   if ((error = OMX_SetParameter (camera.handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_SetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
@@ -838,7 +837,7 @@ int main (){
   OMX_CONFIG_FRAMERATETYPE framerate_st;
   OMX_INIT_STRUCTURE (framerate_st);
   framerate_st.nPortIndex = 71;
-  framerate_st.xEncodeFramerate = def_st.format.video.xFramerate;
+  framerate_st.xEncodeFramerate = port_st.format.video.xFramerate;
   if ((error = OMX_SetConfig (camera.handle, OMX_IndexConfigVideoFramerate,
       &framerate_st))){
     fprintf (stderr, "error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
@@ -858,23 +857,23 @@ int main (){
   
   //Configure encoder port definition
   printf ("configuring %s port definition\n", encoder.name);
-  OMX_INIT_STRUCTURE (def_st);
-  def_st.nPortIndex = 201;
+  OMX_INIT_STRUCTURE (port_st);
+  port_st.nPortIndex = 201;
   if ((error = OMX_GetParameter (encoder.handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_GetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
   }
-  def_st.format.video.nFrameWidth = CAM_WIDTH;
-  def_st.format.video.nFrameHeight = CAM_HEIGHT;
-  def_st.format.video.nStride = CAM_WIDTH;
-  def_st.format.video.xFramerate = VIDEO_FRAMERATE << 16;
+  port_st.format.video.nFrameWidth = CAM_WIDTH;
+  port_st.format.video.nFrameHeight = CAM_HEIGHT;
+  port_st.format.video.nStride = CAM_WIDTH;
+  port_st.format.video.xFramerate = VIDEO_FRAMERATE << 16;
   //Despite being configured later, these two fields need to be set
-  def_st.format.video.nBitrate = VIDEO_BITRATE;
-  def_st.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
+  port_st.format.video.nBitrate = VIDEO_BITRATE;
+  port_st.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
   if ((error = OMX_SetParameter (encoder.handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_SetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
