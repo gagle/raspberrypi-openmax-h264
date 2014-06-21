@@ -70,7 +70,7 @@ AWB (auto white balance) algorithms.
 #define CAM_EXPOSURE OMX_ExposureControlAuto
 #define CAM_EXPOSURE_COMPENSATION 0 //-24 .. 24
 #define CAM_MIRROR OMX_MirrorNone
-#define CAM_ROTATION 0.0 //0.0 90.0 180.0 270.0
+#define CAM_ROTATION 0 //0 90 180 270
 #define CAM_COLOR_ENABLE OMX_FALSE
 #define CAM_COLOR_U 128 //0 .. 255
 #define CAM_COLOR_V 128 //0 .. 255
