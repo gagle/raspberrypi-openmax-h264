@@ -62,7 +62,7 @@ AWB (auto white balance) algorithms.
 #define CAM_CONTRAST 0 //-100 .. 100
 #define CAM_BRIGHTNESS 50 //0 .. 100
 #define CAM_SATURATION 0 //-100 .. 100
-//100*(1/8) = 125
+//1000*(1/8) = 125
 #define CAM_SHUTTER_SPEED 125 //0 ..
 #define CAM_SHUTTER_SPEED_AUTO OMX_FALSE
 #define CAM_ISO 100 //100 .. 800
