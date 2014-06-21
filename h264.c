@@ -78,13 +78,13 @@ AWB (auto white balance) algorithms.
 #define CAM_METERING OMX_MeteringModeAverage
 #define CAM_WHITE_BALANCE OMX_WhiteBalControlAuto
 //The gains are used if the white balance is set to off
-#define CAM_WHITE_BALANCE_RED_GAIN 0.1 //0.001 .. 7.999
-#define CAM_WHITE_BALANCE_BLUE_GAIN 0.1 //0.001 .. 7.999
+#define CAM_WHITE_BALANCE_RED_GAIN 1000 //0 ..
+#define CAM_WHITE_BALANCE_BLUE_GAIN 1000 //0 ..
 #define CAM_IMAGE_FILTER OMX_ImageFilterNone
-#define CAM_ROI_TOP 0.0 //0.0 .. 1.0
-#define CAM_ROI_LEFT 0.0 //0.0 .. 1.0
-#define CAM_ROI_WIDTH 1.0 //0.0 .. 1.0
-#define CAM_ROI_HEIGHT 1.0 //0.0 .. 1.0
+#define CAM_ROI_TOP 0 //0 .. 100
+#define CAM_ROI_LEFT 0 //0 .. 100
+#define CAM_ROI_WIDTH 100 //0 .. 100
+#define CAM_ROI_HEIGHT 100 //0 .. 100
 
 /*
 Possible values:
@@ -634,9 +634,8 @@ void set_camera_settings (component_t* camera){
   if (!CAM_WHITE_BALANCE){
     OMX_CONFIG_CUSTOMAWBGAINSTYPE white_balance_gains_st;
     OMX_INIT_STRUCTURE (white_balance_gains_st);
-    white_balance_gains_st.xGainR = (OMX_U32)(CAM_WHITE_BALANCE_RED_GAIN*65536);
-    white_balance_gains_st.xGainB =
-        (OMX_U32)(CAM_WHITE_BALANCE_BLUE_GAIN*65536);
+    white_balance_gains_st.xGainR = (CAM_WHITE_BALANCE_RED_GAIN << 16)/1000;
+    white_balance_gains_st.xGainB = (CAM_WHITE_BALANCE_BLUE_GAIN << 16)/1000;
     if ((error = OMX_SetConfig (camera->handle, OMX_IndexConfigCustomAwbGains,
         &white_balance_gains_st))){
       fprintf (stderr, "error: OMX_SetConfig: %s\n",
@@ -705,10 +704,10 @@ void set_camera_settings (component_t* camera){
   OMX_CONFIG_INPUTCROPTYPE roi;
   OMX_INIT_STRUCTURE (roi);
   roi.nPortIndex = OMX_ALL;
-  roi.xLeft = (OMX_U32)(CAM_ROI_LEFT*65536);
-  roi.xTop = (OMX_U32)(CAM_ROI_TOP*65536);
-  roi.xWidth = (OMX_U32)(CAM_ROI_WIDTH*65536);
-  roi.xHeight = (OMX_U32)(CAM_ROI_HEIGHT*65536);
+  roi.xLeft = (CAM_ROI_LEFT << 16)/100;
+  roi.xTop = (CAM_ROI_TOP << 16)/100;
+  roi.xWidth = (CAM_ROI_WIDTH << 16)/100;
+  roi.xHeight = (CAM_ROI_HEIGHT << 16)/100;
   if ((error = OMX_SetConfig (camera->handle,
       OMX_IndexConfigInputCropPercentages, &roi))){
     fprintf (stderr, "error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
