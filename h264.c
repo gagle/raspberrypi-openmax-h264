@@ -62,11 +62,11 @@ AWB (auto white balance) algorithms.
 #define CAM_CONTRAST 0 //-100 .. 100
 #define CAM_BRIGHTNESS 50 //0 .. 100
 #define CAM_SATURATION 0 //-100 .. 100
-//1000*(1/8) = 125
-#define CAM_SHUTTER_SPEED 125 //0 ..
-#define CAM_SHUTTER_SPEED_AUTO OMX_FALSE
-#define CAM_ISO 100 //100 .. 800
+#define CAM_SHUTTER_SPEED_AUTO OMX_TRUE
+//In microseconds, (1/8)*1e6
+#define CAM_SHUTTER_SPEED 125000 //1 ..
 #define CAM_ISO_AUTO OMX_TRUE
+#define CAM_ISO 100 //100 .. 800
 #define CAM_EXPOSURE OMX_ExposureControlAuto
 #define CAM_EXPOSURE_COMPENSATION 0 //-24 .. 24
 #define CAM_MIRROR OMX_MirrorNone
@@ -587,7 +587,7 @@ void set_camera_settings (component_t* camera){
   exposure_value_st.nPortIndex = OMX_ALL;
   exposure_value_st.eMetering = CAM_METERING;
   exposure_value_st.xEVCompensation = (CAM_EXPOSURE_COMPENSATION << 16)/6;
-  exposure_value_st.nShutterSpeedMsec = CAM_SHUTTER_SPEED*1e6;
+  exposure_value_st.nShutterSpeedMsec = CAM_SHUTTER_SPEED;
   exposure_value_st.bAutoShutterSpeed = CAM_SHUTTER_SPEED_AUTO;
   exposure_value_st.nSensitivity = CAM_ISO;
   exposure_value_st.bAutoSensitivity = CAM_ISO_AUTO;
@@ -824,7 +824,6 @@ int main (){
   
   //Preview port
   port_st.nPortIndex = 70;
-  port_st.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
   if ((error = OMX_SetParameter (camera.handle, OMX_IndexParamPortDefinition,
       &port_st))){
     fprintf (stderr, "error: OMX_SetParameter: %s\n",

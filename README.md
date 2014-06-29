@@ -13,7 +13,7 @@ If you want to play the video, you'll need to wrap it with a container format (s
 $ mkvmerge --default-duration 0:25p -o video.mkv video.h264
 ```
 
-Where `25p` is the encoding framerate of the h264 video. For example, if you record a 640x480 @30fps, then you should encode the matroska file with `--default-duration 0:30p`.
+Where `25p` is the encoding framerate of the h264 video. For example, if you record 640x480 @30fps, then you should encode the matroska file with `--default-duration 0:30p`.
 
 Where
 
