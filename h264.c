@@ -63,8 +63,7 @@ AWB (auto white balance) algorithms.
 #define CAM_BRIGHTNESS 50 //0 .. 100
 #define CAM_SATURATION 0 //-100 .. 100
 #define CAM_SHUTTER_SPEED_AUTO OMX_TRUE
-//In microseconds, (1/8)*1e6
-#define CAM_SHUTTER_SPEED 125000 //1 ..
+#define CAM_SHUTTER_SPEED 1.0/8.0
 #define CAM_ISO_AUTO OMX_TRUE
 #define CAM_ISO 100 //100 .. 800
 #define CAM_EXPOSURE OMX_ExposureControlAuto
@@ -586,8 +585,9 @@ void set_camera_settings (component_t* camera){
   OMX_INIT_STRUCTURE (exposure_value_st);
   exposure_value_st.nPortIndex = OMX_ALL;
   exposure_value_st.eMetering = CAM_METERING;
-  exposure_value_st.xEVCompensation = (CAM_EXPOSURE_COMPENSATION << 16)/6;
-  exposure_value_st.nShutterSpeedMsec = CAM_SHUTTER_SPEED;
+  exposure_value_st.xEVCompensation =
+      (OMX_S32)((CAM_EXPOSURE_COMPENSATION<<16)/6.0);
+  exposure_value_st.nShutterSpeedMsec = (OMX_U32)((CAM_SHUTTER_SPEED)*1e6);
   exposure_value_st.bAutoShutterSpeed = CAM_SHUTTER_SPEED_AUTO;
   exposure_value_st.nSensitivity = CAM_ISO;
   exposure_value_st.bAutoSensitivity = CAM_ISO_AUTO;
