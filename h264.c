@@ -53,7 +53,7 @@ AWB (auto white balance) algorithms.
 
 #define VIDEO_FRAMERATE 30
 #define VIDEO_BITRATE 10000000
-#define VIDEO_IDR_PERIOD 60 //Minimum 2 (1 IDR frame every 1 frame)
+#define VIDEO_IDR_PERIOD 0 //Disabled
 
 //Some settings doesn't work well
 #define CAM_WIDTH 1920
