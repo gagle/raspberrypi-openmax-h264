@@ -52,8 +52,11 @@ AWB (auto white balance) algorithms.
 #define FILENAME "video.h264"
 
 #define VIDEO_FRAMERATE 30
-#define VIDEO_BITRATE 10000000
+#define VIDEO_BITRATE 17000000
 #define VIDEO_IDR_PERIOD 0 //Disabled
+#define VIDEO_SEI OMX_FALSE
+#define VIDEO_EEDE OMX_FALSE
+#define VIDEO_EEDE_LOSS_RATE 0
 
 //Some settings doesn't work well
 #define CAM_WIDTH 1920
@@ -759,6 +762,41 @@ void set_h264_settings (component_t* encoder){
   if ((error = OMX_SetConfig (encoder->handle,
       OMX_IndexConfigVideoAVCIntraPeriod, &idr_st))){
     fprintf (stderr, "error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
+    exit (1);
+  }
+  
+  //SEI messages
+  OMX_PARAM_BRCMVIDEOAVCSEIENABLETYPE sei_st;
+  OMX_INIT_STRUCTURE (sei_st);
+  sei_st.nPortIndex = 201;
+  sei_st.bEnable = VIDEO_SEI;
+  if ((error = OMX_SetParameter (encoder->handle,
+      OMX_IndexParamBrcmVideoAVCSEIEnable, &sei_st))){
+    fprintf (stderr, "error: OMX_SetParameter: %s\n",
+        dump_OMX_ERRORTYPE (error));
+    exit (1);
+  }
+  
+  //EEDE
+  OMX_VIDEO_EEDE_ENABLE eede_st;
+  OMX_INIT_STRUCTURE (eede_st);
+  eede_st.nPortIndex = 201;
+  eede_st.enable = VIDEO_EEDE;
+  if ((error = OMX_SetParameter (encoder->handle, OMX_IndexParamBrcmEEDEEnable,
+      &eede_st))){
+    fprintf (stderr, "error: OMX_SetParameter: %s\n",
+        dump_OMX_ERRORTYPE (error));
+    exit (1);
+  }
+  
+  OMX_VIDEO_EEDE_LOSSRATE eede_loss_rate_st;
+  OMX_INIT_STRUCTURE (eede_loss_rate_st);
+  eede_loss_rate_st.nPortIndex = 201;
+  eede_loss_rate_st.loss_rate = VIDEO_EEDE_LOSS_RATE;
+  if ((error = OMX_SetParameter (encoder->handle,
+      OMX_IndexParamBrcmEEDELossRate, &eede_loss_rate_st))){
+    fprintf (stderr, "error: OMX_SetParameter: %s\n",
+        dump_OMX_ERRORTYPE (error));
     exit (1);
   }
 }
