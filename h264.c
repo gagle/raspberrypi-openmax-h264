@@ -62,14 +62,15 @@ AWB (auto white balance) algorithms.
 #define CAM_CONTRAST 0 //-100 .. 100
 #define CAM_BRIGHTNESS 50 //0 .. 100
 #define CAM_SATURATION 0 //-100 .. 100
-#define CAM_SHUTTER_SPEED 1.0/8.0
-#define CAM_SHUTTER_SPEED_AUTO OMX_FALSE
-#define CAM_ISO 100 //100 .. 800
+#define CAM_SHUTTER_SPEED_AUTO OMX_TRUE
+//In microseconds, (1/8)*1e6
+#define CAM_SHUTTER_SPEED 125000 //1 ..
 #define CAM_ISO_AUTO OMX_TRUE
+#define CAM_ISO 100 //100 .. 800
 #define CAM_EXPOSURE OMX_ExposureControlAuto
-#define CAM_EXPOSURE_COMPENSATION 0 //-10 .. 10
+#define CAM_EXPOSURE_COMPENSATION 0 //-24 .. 24
 #define CAM_MIRROR OMX_MirrorNone
-#define CAM_ROTATION 0.0 //0.0 90.0 180.0 270.0
+#define CAM_ROTATION 0 //0 90 180 270
 #define CAM_COLOR_ENABLE OMX_FALSE
 #define CAM_COLOR_U 128 //0 .. 255
 #define CAM_COLOR_V 128 //0 .. 255
@@ -78,13 +79,13 @@ AWB (auto white balance) algorithms.
 #define CAM_METERING OMX_MeteringModeAverage
 #define CAM_WHITE_BALANCE OMX_WhiteBalControlAuto
 //The gains are used if the white balance is set to off
-#define CAM_WHITE_BALANCE_RED_GAIN 0.1 //0.001 .. 7.999
-#define CAM_WHITE_BALANCE_BLUE_GAIN 0.1 //0.001 .. 7.999
+#define CAM_WHITE_BALANCE_RED_GAIN 1000 //0 ..
+#define CAM_WHITE_BALANCE_BLUE_GAIN 1000 //0 ..
 #define CAM_IMAGE_FILTER OMX_ImageFilterNone
-#define CAM_ROI_TOP 0.0 //0.0 .. 1.0
-#define CAM_ROI_LEFT 0.0 //0.0 .. 1.0
-#define CAM_ROI_WIDTH 1.0 //0.0 .. 1.0
-#define CAM_ROI_HEIGHT 1.0 //0.0 .. 1.0
+#define CAM_ROI_TOP 0 //0 .. 100
+#define CAM_ROI_LEFT 0 //0 .. 100
+#define CAM_ROI_WIDTH 100 //0 .. 100
+#define CAM_ROI_HEIGHT 100 //0 .. 100
 
 /*
 Possible values:
@@ -493,18 +494,18 @@ void enable_encoder_output_port (
   
   enable_port (encoder, 201);
   
-  OMX_PARAM_PORTDEFINITIONTYPE def_st;
-  OMX_INIT_STRUCTURE (def_st);
-  def_st.nPortIndex = 201;
+  OMX_PARAM_PORTDEFINITIONTYPE port_st;
+  OMX_INIT_STRUCTURE (port_st);
+  port_st.nPortIndex = 201;
   if ((error = OMX_GetParameter (encoder->handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_GetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   printf ("allocating %s output buffer\n", encoder->name);
   if ((error = OMX_AllocateBuffer (encoder->handle, encoder_output_buffer, 201,
-      0, def_st.nBufferSize))){
+      0, port_st.nBufferSize))){
     fprintf (stderr, "error: OMX_AllocateBuffer: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
@@ -585,9 +586,8 @@ void set_camera_settings (component_t* camera){
   OMX_INIT_STRUCTURE (exposure_value_st);
   exposure_value_st.nPortIndex = OMX_ALL;
   exposure_value_st.eMetering = CAM_METERING;
-  exposure_value_st.xEVCompensation =
-      (OMX_S32)((CAM_EXPOSURE_COMPENSATION<<16)/6.0);
-  exposure_value_st.nShutterSpeedMsec = (OMX_U32)((CAM_SHUTTER_SPEED)*1e6);
+  exposure_value_st.xEVCompensation = (CAM_EXPOSURE_COMPENSATION << 16)/6;
+  exposure_value_st.nShutterSpeedMsec = CAM_SHUTTER_SPEED;
   exposure_value_st.bAutoShutterSpeed = CAM_SHUTTER_SPEED_AUTO;
   exposure_value_st.nSensitivity = CAM_ISO;
   exposure_value_st.bAutoSensitivity = CAM_ISO_AUTO;
@@ -634,9 +634,8 @@ void set_camera_settings (component_t* camera){
   if (!CAM_WHITE_BALANCE){
     OMX_CONFIG_CUSTOMAWBGAINSTYPE white_balance_gains_st;
     OMX_INIT_STRUCTURE (white_balance_gains_st);
-    white_balance_gains_st.xGainR = (OMX_U32)(CAM_WHITE_BALANCE_RED_GAIN*65536);
-    white_balance_gains_st.xGainB =
-        (OMX_U32)(CAM_WHITE_BALANCE_BLUE_GAIN*65536);
+    white_balance_gains_st.xGainR = (CAM_WHITE_BALANCE_RED_GAIN << 16)/1000;
+    white_balance_gains_st.xGainB = (CAM_WHITE_BALANCE_BLUE_GAIN << 16)/1000;
     if ((error = OMX_SetConfig (camera->handle, OMX_IndexConfigCustomAwbGains,
         &white_balance_gains_st))){
       fprintf (stderr, "error: OMX_SetConfig: %s\n",
@@ -705,10 +704,10 @@ void set_camera_settings (component_t* camera){
   OMX_CONFIG_INPUTCROPTYPE roi;
   OMX_INIT_STRUCTURE (roi);
   roi.nPortIndex = OMX_ALL;
-  roi.xLeft = (OMX_U32)(CAM_ROI_LEFT*65536);
-  roi.xTop = (OMX_U32)(CAM_ROI_TOP*65536);
-  roi.xWidth = (OMX_U32)(CAM_ROI_WIDTH*65536);
-  roi.xHeight = (OMX_U32)(CAM_ROI_HEIGHT*65536);
+  roi.xLeft = (CAM_ROI_LEFT << 16)/100;
+  roi.xTop = (CAM_ROI_TOP << 16)/100;
+  roi.xWidth = (CAM_ROI_WIDTH << 16)/100;
+  roi.xHeight = (CAM_ROI_HEIGHT << 16)/100;
   if ((error = OMX_SetConfig (camera->handle,
       OMX_IndexConfigInputCropPercentages, &roi))){
     fprintf (stderr, "error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
@@ -800,35 +799,33 @@ int main (){
   
   //Configure camera port definition
   printf ("configuring %s port definition\n", camera.name);
-  OMX_PARAM_PORTDEFINITIONTYPE def_st;
-  OMX_INIT_STRUCTURE (def_st);
-  def_st.nPortIndex = 71;
+  OMX_PARAM_PORTDEFINITIONTYPE port_st;
+  OMX_INIT_STRUCTURE (port_st);
+  port_st.nPortIndex = 71;
   if ((error = OMX_GetParameter (camera.handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_GetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
-  def_st.format.video.nFrameWidth = CAM_WIDTH;
-  def_st.format.video.nFrameHeight = CAM_HEIGHT;
-  //Stride is byte-per-pixel*width, YUV has 1 byte per pixel, so the stride is
-  //the width. See mmal/util/mmal_util.c, mmal_encoding_width_to_stride()
-  def_st.format.video.nStride = CAM_WIDTH;
-  def_st.format.video.xFramerate = VIDEO_FRAMERATE << 16;
-  def_st.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
-  def_st.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
+  port_st.format.video.nFrameWidth = CAM_WIDTH;
+  port_st.format.video.nFrameHeight = CAM_HEIGHT;
+  port_st.format.video.nStride = CAM_WIDTH;
+  port_st.format.video.xFramerate = VIDEO_FRAMERATE << 16;
+  port_st.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
+  port_st.format.video.eColorFormat = OMX_COLOR_FormatYUV420PackedPlanar;
   if ((error = OMX_SetParameter (camera.handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_SetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
   }
   
   //Preview port
-  def_st.nPortIndex = 70;
+  port_st.nPortIndex = 70;
   if ((error = OMX_SetParameter (camera.handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_SetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
@@ -838,7 +835,7 @@ int main (){
   OMX_CONFIG_FRAMERATETYPE framerate_st;
   OMX_INIT_STRUCTURE (framerate_st);
   framerate_st.nPortIndex = 71;
-  framerate_st.xEncodeFramerate = def_st.format.video.xFramerate;
+  framerate_st.xEncodeFramerate = port_st.format.video.xFramerate;
   if ((error = OMX_SetConfig (camera.handle, OMX_IndexConfigVideoFramerate,
       &framerate_st))){
     fprintf (stderr, "error: OMX_SetConfig: %s\n", dump_OMX_ERRORTYPE (error));
@@ -858,23 +855,23 @@ int main (){
   
   //Configure encoder port definition
   printf ("configuring %s port definition\n", encoder.name);
-  OMX_INIT_STRUCTURE (def_st);
-  def_st.nPortIndex = 201;
+  OMX_INIT_STRUCTURE (port_st);
+  port_st.nPortIndex = 201;
   if ((error = OMX_GetParameter (encoder.handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_GetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
   }
-  def_st.format.video.nFrameWidth = CAM_WIDTH;
-  def_st.format.video.nFrameHeight = CAM_HEIGHT;
-  def_st.format.video.nStride = CAM_WIDTH;
-  def_st.format.video.xFramerate = VIDEO_FRAMERATE << 16;
+  port_st.format.video.nFrameWidth = CAM_WIDTH;
+  port_st.format.video.nFrameHeight = CAM_HEIGHT;
+  port_st.format.video.nStride = CAM_WIDTH;
+  port_st.format.video.xFramerate = VIDEO_FRAMERATE << 16;
   //Despite being configured later, these two fields need to be set
-  def_st.format.video.nBitrate = VIDEO_BITRATE;
-  def_st.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
+  port_st.format.video.nBitrate = VIDEO_BITRATE;
+  port_st.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
   if ((error = OMX_SetParameter (encoder.handle, OMX_IndexParamPortDefinition,
-      &def_st))){
+      &port_st))){
     fprintf (stderr, "error: OMX_SetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
