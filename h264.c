@@ -14,12 +14,12 @@ Very quick OpenMAX IL explanation:
   OMX_AllocateBuffer() and free them with OMX_FreeBuffer().
 - The components have states.
 - There are at least two threads: the thread that uses the application (CPU) and
-  the	thread that is used internally by OMX to execute the components (GPU).
+  the thread that is used internally by OMX to execute the components (GPU).
 - There are two types of functions: blocking and non-blocking. The blocking
   functions are synchronous and the non-blocking are asynchronous. Being
   asynchronous means that the function returns immediately but the result is
   returned in a later time, so you need to wait until you receive an event. This
-  example	uses two non-blocking functions: OMX_SendCommand and
+  example uses two non-blocking functions: OMX_SendCommand and
   OMX_FillThisBuffer.
 
 Note: The camera component has two video ports: "preview" and "video". The
