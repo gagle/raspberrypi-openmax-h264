@@ -15,8 +15,6 @@ $ mkvmerge --default-duration 0:25p -o video.mkv video.h264
 
 Where `25p` is the encoding framerate of the h264 video. For example, if you record 640x480 @30fps, then you should encode the matroska file with `--default-duration 0:30p`.
 
-Where
-
 Build steps:
 
 - Download and install the `gcc` and `make` programs.

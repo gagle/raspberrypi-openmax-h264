@@ -765,7 +765,7 @@ void set_h264_settings (component_t* encoder){
     exit (1);
   }
   
-  //SEI messages
+  //SEI
   OMX_PARAM_BRCMVIDEOAVCSEIENABLETYPE sei_st;
   OMX_INIT_STRUCTURE (sei_st);
   sei_st.nPortIndex = 201;
