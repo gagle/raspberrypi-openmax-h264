@@ -23,7 +23,7 @@ Very quick OpenMAX IL explanation:
   OMX_FillThisBuffer.
 
 Note: The camera component has two video ports: "preview" and "video". The
-"preview" port must be enabled even if you don't need it (tunnel it to the
+"preview" port must be enabled even if you're not using it (tunnel it to the
 null_sink component) because it is used to run AGC (automatic gain control) and
 AWB (auto white balance) algorithms.
 */
