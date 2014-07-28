@@ -60,6 +60,7 @@ AWB (auto white balance) algorithms.
 #define VIDEO_QP OMX_FALSE
 #define VIDEO_QP_I 0 //1 .. 51, 0 means off
 #define VIDEO_QP_P 0 //1 .. 51, 0 means off
+#define VIDEO_PROFILE OMX_VIDEO_AVCProfileHigh
 
 //Some settings doesn't work well
 #define CAM_WIDTH 1920
@@ -164,6 +165,11 @@ CAM_WHITE_BALANCE
   OMX_WhiteBalControlIncandescent
   OMX_WhiteBalControlFlash
   OMX_WhiteBalControlHorizon
+
+VIDEO_PROFILE
+  OMX_VIDEO_AVCProfileHigh
+  OMX_VIDEO_AVCProfileBaseline
+  OMX_VIDEO_AVCProfileMain
 */
 
 //Data of each component
@@ -816,6 +822,24 @@ void set_h264_settings (component_t* encoder){
   eede_loss_rate_st.loss_rate = VIDEO_EEDE_LOSS_RATE;
   if ((error = OMX_SetParameter (encoder->handle,
       OMX_IndexParamBrcmEEDELossRate, &eede_loss_rate_st))){
+    fprintf (stderr, "error: OMX_SetParameter: %s\n",
+        dump_OMX_ERRORTYPE (error));
+    exit (1);
+  }
+  
+  //Profile
+  OMX_VIDEO_PARAM_AVCTYPE avc_st;
+  OMX_INIT_STRUCTURE (avc_st);
+  avc_st.nPortIndex = 201;
+  if ((error = OMX_GetParameter (encoder->handle,
+      OMX_IndexParamVideoAvc, &avc_st))){
+    fprintf (stderr, "error: OMX_GetParameter: %s\n",
+        dump_OMX_ERRORTYPE (error));
+    exit (1);
+  }
+  avc_st.eProfile = VIDEO_PROFILE;
+  if ((error = OMX_SetParameter (encoder->handle,
+      OMX_IndexParamVideoAvc, &avc_st))){
     fprintf (stderr, "error: OMX_SetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
