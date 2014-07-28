@@ -57,6 +57,9 @@ AWB (auto white balance) algorithms.
 #define VIDEO_SEI OMX_FALSE
 #define VIDEO_EEDE OMX_FALSE
 #define VIDEO_EEDE_LOSS_RATE 0
+#define VIDEO_QP OMX_FALSE
+#define VIDEO_QP_I 0 //1 .. 51, 0 means off
+#define VIDEO_QP_P 0 //1 .. 51, 0 means off
 
 //Some settings doesn't work well
 #define CAM_WIDTH 1920
@@ -135,6 +138,8 @@ CAM_IMAGE_FILTER
   OMX_ImageFilterPosterise
   OMX_ImageFilterColourBalance
   OMX_ImageFilterCartoon
+  OMX_ImageFilterAnaglyph
+  OMX_ImageFilterDeInterlaceFast
 
 CAM_METERING
   OMX_MeteringModeAverage
@@ -723,17 +728,33 @@ void set_h264_settings (component_t* encoder){
   
   OMX_ERRORTYPE error;
   
-  //Bitrate
-  OMX_VIDEO_PARAM_BITRATETYPE bitrate_st;
-  OMX_INIT_STRUCTURE (bitrate_st);
-  bitrate_st.eControlRate = OMX_Video_ControlRateVariable;
-  bitrate_st.nTargetBitrate = VIDEO_BITRATE;
-  bitrate_st.nPortIndex = 201;
-  if ((error = OMX_SetParameter (encoder->handle, OMX_IndexParamVideoBitrate,
-      &bitrate_st))){
-    fprintf (stderr, "error: OMX_SetParameter: %s\n",
-        dump_OMX_ERRORTYPE (error));
-    exit (1);
+  if (!VIDEO_QP){
+    //Bitrate
+    OMX_VIDEO_PARAM_BITRATETYPE bitrate_st;
+    OMX_INIT_STRUCTURE (bitrate_st);
+    bitrate_st.eControlRate = OMX_Video_ControlRateVariable;
+    bitrate_st.nTargetBitrate = VIDEO_BITRATE;
+    bitrate_st.nPortIndex = 201;
+    if ((error = OMX_SetParameter (encoder->handle, OMX_IndexParamVideoBitrate,
+        &bitrate_st))){
+      fprintf (stderr, "error: OMX_SetParameter: %s\n",
+          dump_OMX_ERRORTYPE (error));
+      exit (1);
+    }
+  }else{
+    //Quantization parameters
+    OMX_VIDEO_PARAM_QUANTIZATIONTYPE quantization_st;
+    OMX_INIT_STRUCTURE (quantization_st);
+    quantization_st.nPortIndex = 201;
+    //nQpB returns an error, it cannot be modified
+    quantization_st.nQpI = VIDEO_QP_I;
+    quantization_st.nQpP = VIDEO_QP_P;
+    if ((error = OMX_SetParameter (encoder->handle,
+        OMX_IndexParamVideoQuantization, &quantization_st))){
+      fprintf (stderr, "error: OMX_SetParameter: %s\n",
+          dump_OMX_ERRORTYPE (error));
+      exit (1);
+    }
   }
   
   //Codec
@@ -906,7 +927,7 @@ int main (){
   port_st.format.video.nStride = CAM_WIDTH;
   port_st.format.video.xFramerate = VIDEO_FRAMERATE << 16;
   //Despite being configured later, these two fields need to be set
-  port_st.format.video.nBitrate = VIDEO_BITRATE;
+  port_st.format.video.nBitrate = VIDEO_QP ? 0 : VIDEO_BITRATE;
   port_st.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
   if ((error = OMX_SetParameter (encoder.handle, OMX_IndexParamPortDefinition,
       &port_st))){
