@@ -60,7 +60,7 @@ AWB (auto white balance) algorithms.
 #define VIDEO_QP OMX_FALSE
 #define VIDEO_QP_I 0 //1 .. 51, 0 means off
 #define VIDEO_QP_P 0 //1 .. 51, 0 means off
-#define VIDEO_PROFILE OMX_VIDEO_AVCProfileHigh
+#define VIDEO_PROFILE OMX_VIDEO_AVCProfileBaseline
 
 //Some settings doesn't work well
 #define CAM_WIDTH 1920
@@ -826,6 +826,10 @@ void set_h264_settings (component_t* encoder){
         dump_OMX_ERRORTYPE (error));
     exit (1);
   }
+}
+
+void set_avc_settings (component_t* encoder){
+  OMX_ERRORTYPE error;
   
   //Profile
   OMX_VIDEO_PARAM_AVCTYPE avc_st;
@@ -962,6 +966,9 @@ int main (){
   
   //Configure H264
   set_h264_settings (&encoder);
+  
+  //Configure AVC
+  set_avc_settings (&encoder);
   
   //Setup tunnels: camera (video) -> video_encode, camera (preview) -> null_sink
   printf ("configuring tunnels\n");
