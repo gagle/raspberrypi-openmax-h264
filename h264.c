@@ -826,12 +826,8 @@ void set_h264_settings (component_t* encoder){
         dump_OMX_ERRORTYPE (error));
     exit (1);
   }
-}
-
-void set_avc_settings (component_t* encoder){
-  OMX_ERRORTYPE error;
   
-  //Profile
+  //AVC Profile
   OMX_VIDEO_PARAM_AVCTYPE avc_st;
   OMX_INIT_STRUCTURE (avc_st);
   avc_st.nPortIndex = 201;
@@ -966,9 +962,6 @@ int main (){
   
   //Configure H264
   set_h264_settings (&encoder);
-  
-  //Configure AVC
-  set_avc_settings (&encoder);
   
   //Setup tunnels: camera (video) -> video_encode, camera (preview) -> null_sink
   printf ("configuring tunnels\n");
