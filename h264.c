@@ -60,7 +60,7 @@ AWB (auto white balance) algorithms.
 #define VIDEO_QP OMX_FALSE
 #define VIDEO_QP_I 0 //1 .. 51, 0 means off
 #define VIDEO_QP_P 0 //1 .. 51, 0 means off
-#define VIDEO_PROFILE OMX_VIDEO_AVCProfileBaseline
+#define VIDEO_PROFILE OMX_VIDEO_AVCProfileHigh
 
 //Some settings doesn't work well
 #define CAM_WIDTH 1920
