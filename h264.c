@@ -61,6 +61,7 @@ AWB (auto white balance) algorithms.
 #define VIDEO_QP_I 0 //1 .. 51, 0 means off
 #define VIDEO_QP_P 0 //1 .. 51, 0 means off
 #define VIDEO_PROFILE OMX_VIDEO_AVCProfileHigh
+#define VIDEO_INLINE_HEADERS OMX_FALSE
 
 //Some settings doesn't work well
 #define CAM_WIDTH 1920
@@ -840,6 +841,18 @@ void set_h264_settings (component_t* encoder){
   avc_st.eProfile = VIDEO_PROFILE;
   if ((error = OMX_SetParameter (encoder->handle,
       OMX_IndexParamVideoAvc, &avc_st))){
+    fprintf (stderr, "error: OMX_SetParameter: %s\n",
+        dump_OMX_ERRORTYPE (error));
+    exit (1);
+  }
+  
+  //Inline SPS/PPS
+  OMX_CONFIG_PORTBOOLEANTYPE headers_st;
+  OMX_INIT_STRUCTURE (headers_st);
+  headers_st.nPortIndex = 201;
+  headers_st.bEnabled = VIDEO_INLINE_HEADERS;
+  if ((error = OMX_SetParameter (encoder->handle,
+      OMX_IndexParamBrcmVideoAVCInlineHeaderEnable, &headers_st))){
     fprintf (stderr, "error: OMX_SetParameter: %s\n",
         dump_OMX_ERRORTYPE (error));
     exit (1);
