@@ -874,6 +874,11 @@ void set_h264_settings (component_t* encoder){
         dump_OMX_ERRORTYPE (error));
     exit (1);
   }
+  
+  //Note: Motion vectors are not implemented in this program.
+  //See for further details
+  //https://github.com/gagle/raspberrypi-omxcam/blob/master/src/h264.c
+  //https://github.com/gagle/raspberrypi-omxcam/blob/master/src/video.c
 }
 
 int main (){
