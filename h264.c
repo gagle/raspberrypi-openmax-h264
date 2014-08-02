@@ -117,32 +117,23 @@ CAM_EXPOSURE
 
 CAM_IMAGE_FILTER
   OMX_ImageFilterNone
-  OMX_ImageFilterNoise
   OMX_ImageFilterEmboss
   OMX_ImageFilterNegative
   OMX_ImageFilterSketch
   OMX_ImageFilterOilPaint
   OMX_ImageFilterHatch
   OMX_ImageFilterGpen
-  OMX_ImageFilterAntialias
-  OMX_ImageFilterDeRing
   OMX_ImageFilterSolarize
   OMX_ImageFilterWatercolor
   OMX_ImageFilterPastel
-  OMX_ImageFilterSharpen
   OMX_ImageFilterFilm
   OMX_ImageFilterBlur
-  OMX_ImageFilterSaturation
-  OMX_ImageFilterDeInterlaceLineDouble
-  OMX_ImageFilterDeInterlaceAdvanced
   OMX_ImageFilterColourSwap
   OMX_ImageFilterWashedOut
   OMX_ImageFilterColourPoint
   OMX_ImageFilterPosterise
   OMX_ImageFilterColourBalance
   OMX_ImageFilterCartoon
-  OMX_ImageFilterAnaglyph
-  OMX_ImageFilterDeInterlaceFast
 
 CAM_METERING
   OMX_MeteringModeAverage
